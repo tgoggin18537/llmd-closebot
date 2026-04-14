@@ -8,14 +8,20 @@ Mia V2.
 ### 1. Create a Private Integration token
 
 GHL UI → Settings → Private Integrations → **Create new**. Scope the token
-to at minimum:
+to ALL of:
 
-- `contacts.readonly`, `contacts.write`
-- `contacts/tags.readonly`, `contacts/tags.write`
+- `locations/tags.readonly`
+- `locations/tags.write`
+- `contacts.readonly`
+- `contacts.write`
+- `contacts/tags.readonly`
+- `contacts/tags.write`
 - `conversations.readonly`
+- `conversations/message.readonly`
 - `conversations/message.write`
-- `locations.readonly`
-- `notes.write`
+- `contacts/notes.write`
+
+If you miss any, the setup script will tell you which are needed.
 
 Copy the token. That's `GHL_API_KEY` in `.dev.vars`.
 

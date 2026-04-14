@@ -86,11 +86,9 @@ async function createLocationTag(env: Env, name: string, dryRun: boolean): Promi
   console.log(`   created tag: ${name}`);
 }
 
-async function getLocation(env: Env): Promise<any> {
-  const res = await fetch(`${BASE}/locations/${env.locationId}`, { headers: headers(env) });
-  if (!res.ok) throw new Error(`getLocation ${res.status}: ${await res.text()}`);
-  return ((await res.json()) as any).location;
-}
+// Note: GET /locations/{id} requires agency-scoped auth. Sub-account
+// Private Integration tokens get 403 there. We use listLocationTags as
+// the connectivity smoke test instead.
 
 async function probeWebhook(env: Env): Promise<void> {
   if (!env.workerUrl) {
@@ -131,11 +129,27 @@ async function main() {
   console.log(`GHL setup for location ${env.locationId}${dryRun ? ' (DRY RUN)' : ''}`);
 
   if (!webhookOnly) {
-    const loc = await getLocation(env);
-    console.log(`connected to location: ${loc.name ?? loc.companyName ?? '(unknown)'}`);
-
     console.log('\n== Tags ==');
-    const existing = await listLocationTags(env);
+    let existing: Array<{ id: string; name: string }> = [];
+    try {
+      existing = await listLocationTags(env);
+      console.log(`connected, ${existing.length} existing tags in this location`);
+    } catch (e: any) {
+      console.error(`Failed to list tags: ${e.message}`);
+      console.error('Your Private Integration token is missing the required scope.');
+      console.error('Add these scopes in GHL → Settings → Private Integrations:');
+      console.error('  - locations/tags.readonly');
+      console.error('  - locations/tags.write');
+      console.error('  - contacts.readonly');
+      console.error('  - contacts.write');
+      console.error('  - contacts/tags.readonly');
+      console.error('  - contacts/tags.write');
+      console.error('  - conversations.readonly');
+      console.error('  - conversations/message.readonly');
+      console.error('  - conversations/message.write');
+      console.error('  - contacts/notes.write');
+      process.exit(1);
+    }
     const existingNames = new Set(existing.map((t) => t.name.toLowerCase()));
 
     for (const t of REQUIRED_TAGS) {
