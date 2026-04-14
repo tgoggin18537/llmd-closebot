@@ -1,0 +1,8 @@
+# Copy to worker/.dev.vars and fill in for `wrangler dev`.
+# For production, use `wrangler secret put NAME` instead.
+
+ANTHROPIC_API_KEY=sk-ant-...
+GHL_API_KEY=...                  # GHL Private Integration token (preferred) or Location API key
+GHL_LOCATION_ID=...              # GHL sub-account / location id
+GHL_WEBHOOK_SECRET=shared-secret-for-ghl-webhook-auth
+MIA_MODEL=claude-sonnet-4-6

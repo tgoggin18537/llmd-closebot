@@ -1,0 +1,45 @@
+name = "llmd-mia"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Defaults. Override per-env below.
+[vars]
+MIA_MODEL = "claude-sonnet-4-6"
+
+# Secrets (set with `wrangler secret put NAME`):
+#   ANTHROPIC_API_KEY
+#   GHL_API_KEY
+#   GHL_LOCATION_ID
+#   GHL_WEBHOOK_SECRET
+
+# Durable Object: per-contact conversation thread.
+[[durable_objects.bindings]]
+name = "CONTACT_THREAD"
+class_name = "ContactThread"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ContactThread"]
+
+# KV for webhook idempotency. Create with:
+#   wrangler kv:namespace create IDEMPOTENCY
+# then paste the id here.
+# [[kv_namespaces]]
+# binding = "IDEMPOTENCY"
+# id = "REPLACE_ME"
+
+# D1 for analytics. Create with:
+#   wrangler d1 create llmd_mia
+# then paste the database_id here.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "llmd_mia"
+# database_id = "REPLACE_ME"
+# migrations_dir = "src/db"
+
+[env.staging]
+name = "llmd-mia-staging"
+
+[env.production]
+name = "llmd-mia"
