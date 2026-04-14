@@ -20,7 +20,9 @@ class_name = "ContactThread"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ContactThread"]
+# new_sqlite_classes is required on the Workers free plan. Stick with this
+# even if you upgrade — SQLite-backed DOs are the new default.
+new_sqlite_classes = ["ContactThread"]
 
 # KV for webhook idempotency. Create with:
 #   wrangler kv:namespace create IDEMPOTENCY
