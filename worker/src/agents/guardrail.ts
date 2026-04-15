@@ -25,16 +25,22 @@ const BANNED_OPENERS = [
 ];
 
 // Phrases that sound templated or wrong in Mia's voice, regardless of position.
-// "Reach out" in any form is banned when Mia refers to herself/the clinic,
-// because every lead is inbound and Mia is never the initiator.
+// "Reach out" self-referential forms are banned because every lead is inbound
+// and Mia is never the initiator. We deliberately do NOT ban generic
+// "the specialist will reach out to you" since that describes workflow.
 const BANNED_PHRASES: RegExp[] = [
   /\bwhat'?s on your radar\b/i,
   /\bwhat brings you here\b/i,
-  /\bjust wanted to (reach out|check in)\b/i,
-  /\bI figured I'?d reach out\b/i,
-  /\b(I|we)(\s+just)?\s*('?m|'?re|'?ve|'?d)?\s*(wanted to\s+)?reach(ed|ing)?\s+out\b/i,
-  /\breaching out to (you|check|say|follow)/i,
-  /\bthanks? for reaching out\b/i,
+  // Self-initiator framing in any conjugation/contraction:
+  //  "I/we [('ll|will|'m|am|'re|are|'ve|have|'d|would)] reach(ed|ing) out"
+  /\b(I|we)(?:'ll|\s+will|'m|\s+am|'re|\s+are|'ve|\s+have|'d|\s+would)?\s+reach(?:ed|ing)?\s+out\b/i,
+  // "I/we (just) want(ed) to reach out" (catches non-contracted forms)
+  /\b(I|we)(?:\s+just)?\s+want(?:ed)?\s+to\s+reach\s+out\b/i,
+  // "just want(ed) to reach out / check in / follow up" without I/we anchor
+  /\bjust\s+want(?:ed)?\s+to\s+(?:reach\s+out|check\s+in|follow\s+up)\b/i,
+  // "figured I'd reach out"
+  /\bfigured\s+I'?d\s+reach\s+out\b/i,
+  /\bthanks?\s+for\s+reaching\s+out\b/i,
 ];
 
 const STAFF_NAMES = [
@@ -98,6 +104,18 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   // 2. Normalize doctor name variants.
   for (const rx of NAME_VARIANTS) {
     text = text.replace(rx, CANONICAL_NAME);
+  }
+
+  // 2b. If the full canonical name appears more than once in this single
+  //     outgoing message, keep the first occurrence and demote the rest to
+  //     "Dr. Lee". A human would not text the full name twice in one SMS.
+  {
+    let seen = 0;
+    text = text.replace(/Dr\.\s+Samuel\s+B\.\s+Lee\s+MD\b/g, () => {
+      seen += 1;
+      return seen === 1 ? CANONICAL_NAME : 'Dr. Lee';
+    });
+    if (seen > 1) violations.push('demoted_repeat_full_name');
   }
 
   // 3. Strip emoji unless this is the first message.

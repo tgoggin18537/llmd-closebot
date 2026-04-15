@@ -18,13 +18,13 @@ export type FaqEntry = {
 
 export const GOAL_OPENERS: Record<'energy' | 'weight' | 'recovery' | 'curious', string> = {
   energy:
-    "That's super common and usually tied to cellular energy declining over time. Peptides like NAD+ work at the source, which is why they help when caffeine and vitamins haven't. Our specialist does free 15 minute calls to figure out what might work. Want me to send the link?",
+    "That's super common, usually tied to cellular energy declining over time. Peptides like NAD+ work at the source, which is why they help when caffeine and vitamins haven't. Want to hop on a quick call with our specialist?",
   weight:
     "That's frustrating and usually not a willpower thing. Peptides like semaglutide and tirzepatide work on the actual hormone signals that control hunger and metabolism, which is why they help when diet alone hasn't moved the needle. Want to hop on a quick call with our specialist?",
   recovery:
-    "That's rough, sleep and recovery issues compound everything else. Peptides basically signal your body to repair itself, which slows down as we age. Our specialist does free calls to figure out what might help. Want the link?",
+    "That's rough, sleep and recovery issues compound everything else. Peptides basically signal your body to repair itself, which slows down as we age. Want me to send the link to chat with our specialist?",
   curious:
-    "Nice. Short version: peptides are amino acid chains that signal your cells to do specific things, burn fat, repair tissue, boost energy. Your body already makes them, therapeutic ones just boost where you need it. Easiest way to go deeper is a quick call with our specialist.",
+    "Nice. Short version: peptides are amino acid chains that signal your cells to do specific things, burn fat, repair tissue, boost energy. Easiest way to go deeper is a quick call with our specialist.",
 };
 
 export const FAQ: FaqEntry[] = [
@@ -36,7 +36,7 @@ export const FAQ: FaqEntry[] = [
   {
     triggers: ['weight loss peptide', 'peptides for weight', 'what do you use for weight'],
     answer:
-      "Semaglutide and tirzepatide are our go-tos, both GLP-1s. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, and because it's physician dosed to your labs you're not guessing at it alone. Want me to get you on a quick call with the team so they can figure out which one fits your body best?",
+      "Semaglutide and tirzepatide are what we use most, both GLP-1s. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed to your labs. Want me to get you on a quick call with the team?",
   },
   {
     triggers: ['fda approved', 'fda approval', 'is this fda'],
@@ -82,7 +82,7 @@ export const FAQ: FaqEntry[] = [
   {
     triggers: ['scared of needles', 'afraid of needles', 'hate needles'],
     answer:
-      "Totally fair. Our specialist was the same way, now she's on four peptides herself and says by week two it's like brushing your teeth. She can walk you through exactly what it feels like on the call.",
+      "Yeah that's fair. Our specialist was the same way, she's on four peptides herself now and says by week two it's like brushing your teeth. She can walk you through what it feels like on the call.",
   },
   {
     triggers: ['is this legit', 'how do i know this is real', 'can i trust'],
@@ -92,7 +92,7 @@ export const FAQ: FaqEntry[] = [
   {
     triggers: ['tried peptides before', "didn't work before", 'they did not work'],
     answer:
-      "That can be a sourcing or a dosing thing. There's a lot of sketchy stuff out there. Ours are pharmaceutical grade from regulated US pharmacies. The specialist can look at what you tried and see if something different would fit better.",
+      "That's usually a sourcing or a dosing thing, a lot of sketchy stuff floating around. Ours are pharmaceutical grade from regulated US pharmacies with physician dosing. The specialist can look at what you tried and see if something different would fit.",
   },
   {
     triggers: ['how fast', 'how long until', 'how quickly', 'when will i see results'],
@@ -176,7 +176,7 @@ export const OBJECTIONS: FaqEntry[] = [
   {
     triggers: ["not ready", "need to think"],
     answer:
-      "Totally fine. Want me to send the link anyway? It'll be there when you want it, no pressure.",
+      "Yeah no rush. Want me to send the link anyway so it's there when you want it?",
   },
   {
     triggers: ["is this a sales call", "are you selling", "what is the call"],
@@ -186,7 +186,7 @@ export const OBJECTIONS: FaqEntry[] = [
   {
     triggers: ["too expensive", "can't afford", "that's a lot"],
     answer:
-      "I hear you. The specialist can help figure out what you actually need, it's not always the priciest option. Plus I've got a 15% off code. What's your best email and I'll send it over?",
+      "I hear you. The specialist can help figure out what you actually need, it's not always the priciest option, and I've got a 15% off code for your first order. What's your best email and I'll send it over?",
   },
   {
     triggers: ["don't have time", "no time", "too busy"],
