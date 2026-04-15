@@ -24,6 +24,16 @@ const BANNED_OPENERS = [
   /^\s*certainly[!,.\s]/i,
 ];
 
+// Phrases that sound templated or wrong in Mia's voice, regardless of position.
+const BANNED_PHRASES: RegExp[] = [
+  /\bwhat'?s on your radar\b/i,
+  /\bwhat brings you here\b/i,
+  /\bjust wanted to reach out\b/i,
+  /\bjust wanted to check in\b/i,
+  /\bI figured I'?d reach out\b/i,
+  /\bI wanted to reach out\b/i,
+];
+
 const STAFF_NAMES = [
   'Danielle',
   'Lauren',
@@ -100,6 +110,17 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   for (const rx of BANNED_OPENERS) {
     if (rx.test(text)) {
       return { ok: false, reason: `banned opener: ${rx}`, violations: [...violations, 'banned_opener'] };
+    }
+  }
+
+  // 4b. Reject banned phrases anywhere in the message.
+  for (const rx of BANNED_PHRASES) {
+    if (rx.test(text)) {
+      return {
+        ok: false,
+        reason: `banned phrase: ${rx}`,
+        violations: [...violations, 'banned_phrase'],
+      };
     }
   }
 
