@@ -187,9 +187,10 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
   history.push({ role: 'user', content: inboundBody });
 
   let candidate = '';
-  const maxAttempts = 2;
+  const maxAttempts = 3;
   let violations: string[] = [];
   let linkSentThisTurn = false;
+  const attemptLog: Array<{ draft: string; reason?: string }> = [];
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const claudeRes = await callClaude({
       apiKey: env.ANTHROPIC_API_KEY,
@@ -214,29 +215,61 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
       candidate = guard.clean;
       violations = guard.violations;
       linkSentThisTurn = guard.linkSentThisTurn;
+      attemptLog.push({ draft: claudeRes.text });
       break;
     } else {
+      attemptLog.push({ draft: claudeRes.text, reason: guard.reason });
       // Nudge the model to retry with the reason.
       history.push({
         role: 'user',
-        content: `[system note] Your last draft violated a rule: ${guard.reason}. Rewrite following all rules.`,
+        content: `[system note] Your last draft violated a rule: ${guard.reason}. Rewrite following all rules. Keep it to one short reply, one question maximum. Do not repeat any goal-discovery question already asked earlier in the thread.`,
       });
     }
   }
 
   if (!candidate) {
-    // Guardrail never passed, let a human handle it.
+    // Guardrail never passed after N attempts. Ship a safe static fallback
+    // so the lead still gets a reply, and flag for human review with the
+    // full draft history so we can diagnose.
+    const FALLBACK = "hmm good one, let me think on that real quick";
+    const sentFallback = await sendSms(
+      { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
+      { contactId, message: FALLBACK },
+    );
     await addTag(
       { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
       contactId,
       'needs-human',
     );
+    const draftDump = attemptLog
+      .map((a, i) => `  attempt ${i + 1}${a.reason ? ` (rejected: ${a.reason})` : ''}:\n    ${a.draft}`)
+      .join('\n');
     await addContactNote(
       { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
       contactId,
-      `[Mia] Could not produce a compliant reply after ${maxAttempts} attempts. Last inbound: "${inboundBody}"`,
+      `[Mia] Guardrail exhausted after ${maxAttempts} attempts. Sent fallback "${FALLBACK}". Inbound: "${inboundBody}".\nDrafts:\n${draftDump}`,
     );
-    return Response.json({ skipped: 'guardrail_exhausted' });
+    // Persist the fallback to DO so it's in history going forward.
+    await stub.fetch('https://do/append', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: { role: 'user', content: inboundBody, at: Date.now(), ghlMessageId: inboundMessageId } as MiaMessage,
+        lastInboundGhlMessageId: inboundMessageId,
+      }),
+    });
+    await stub.fetch('https://do/append', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: { role: 'assistant', content: FALLBACK, at: Date.now(), ghlMessageId: sentFallback.messageId } as MiaMessage,
+      }),
+    });
+    return Response.json({
+      handled: 'guardrail_fallback',
+      sent: FALLBACK,
+      rejectedDrafts: attemptLog
+        .filter((a) => a.reason)
+        .map((a) => ({ reason: a.reason, draft: a.draft })),
+    });
   }
 
   // ----- Send -----

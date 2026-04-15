@@ -226,9 +226,10 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   }
 
   // 4d. Reject compound questions. Mia asks at most one question per message.
-  //     "What's drawing you in, is there something specific you want help
-  //     with?" is two questions joined by a comma.
-  if (countQuestionClauses(text) >= 2) {
+  //     Two checks: (a) more than one "?" in the message; (b) more than one
+  //     sub-clause that starts with a question stem.
+  const qMarkCount = (text.match(/\?/g) ?? []).length;
+  if (qMarkCount >= 2 || countQuestionClauses(text) >= 2) {
     return {
       ok: false,
       reason: 'compound question (more than one question in one message)',
