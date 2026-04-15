@@ -51,8 +51,8 @@ export const FAQ: FaqEntry[] = [
   {
     triggers: ['budget is', 'can you do it for less', 'cheaper option', 'can afford', '$200 budget'],
     answer:
-      "Our protocols typically start around $300 per month. The call is the best place to look at what fits your situation and whether there is an option that works for you.",
-    notes: 'Do not say "really flexible" about pricing. Be honest.',
+      "Honest answer: our protocols start around $300 a month, so there's a gap from $200. The discovery call is a good place to see if any protocol fits your situation, but I don't want to promise something cheaper that may not exist.",
+    notes: 'Do not say "really flexible" or "might find something closer to your range" about pricing. Be honest about the $300 floor.',
   },
   {
     triggers: ['shipping', 'how long does shipping', 'when will it arrive', 'delivery time'],

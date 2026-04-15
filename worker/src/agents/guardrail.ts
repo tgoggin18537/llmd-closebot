@@ -44,9 +44,9 @@ const WELLNESS_CLAIM_PATTERNS: RegExp[] = [
 ];
 
 const NAME_VARIANTS = [
-  /Dr\.?\s+Samuel\s+Lee,?\s*M\.?D\.?/gi,
-  /Dr\.?\s+Samuel\s+B\.?\s+Lee,?\s*M\.?D\.?/gi,
-  /Dr\.?\s+Lee,?\s*M\.?D\.?/gi,
+  /Dr\.?\s+Samuel\s+Lee,?\s*M\.?D\b/gi,
+  /Dr\.?\s+Samuel\s+B\.?\s+Lee,?\s*M\.?D\b/gi,
+  /Dr\.?\s+Lee,?\s*M\.?D\b/gi,
 ];
 
 const CANONICAL_NAME = 'Dr. Samuel B. Lee MD';
