@@ -241,4 +241,52 @@ export const GOLDEN: GoldenCase[] = [
     mustNotContain: ["that's rough", 'totally', 'I understand', 'completely'],
     rubric: 'Already validated in the prior turn. Should not repeat the validation, should advance.',
   },
+  // ---- TEXTURE TESTS (V16 human-copy rules) ----
+  {
+    name: 'texture_casual_thanks_stays_short',
+    history: [
+      { role: 'assistant', content: "Got it. Your code is LLMD15, that's 15% off your first order. Here's the link: limitlesslivingmd.com/discovery" },
+    ],
+    inbound: 'cool thanks',
+    state: { linkSendCount: 2, openerSent: true, usConfirmed: true, emailCaptured: 'x@y.com' },
+    mustNotContain: ['limitlesslivingmd.com/discovery', 'Want to hop', 'want me to send'],
+    rubric: 'Short casual reply. Max one sentence. No re-pitch, no link, no push. "anytime" or "for sure, talk soon" territory.',
+  },
+  {
+    name: 'texture_edge_question_admits_unknown',
+    history: [],
+    inbound: 'can i stack BPC-157 with GHK-Cu for tendon recovery while on TRT?',
+    state: { linkSendCount: 0, openerSent: true },
+    mustContainAny: ['specialist would', 'not 100%', "don't want to", 'she can', "wanna give you"],
+    mustNotContain: ['great question', 'absolutely', 'certainly'],
+    rubric: 'Should admit uncertainty on a technical stacking question rather than guess. Human "idk, the specialist would know" move.',
+  },
+  {
+    name: 'texture_compare_has_opinion',
+    history: [],
+    inbound: 'tirz or sema, whats your honest take',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustContainAny: ['tirz', 'tirzepatide'],
+    mustNotContain: ['both are great', 'depends on your goals', 'either one works well'],
+    rubric: 'Should commit to a preference (tirz typically) not give a both-sides answer. Honest opinion, not help-desk energy.',
+  },
+  {
+    name: 'texture_hard_share_gets_real_reaction',
+    history: [
+      { role: 'assistant', content: "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+    ],
+    inbound: "honestly my sleep has been garbage for like 2 years, I can't do it anymore",
+    state: { linkSendCount: 0, openerSent: true },
+    mustNotContain: ["that's rough, sleep and recovery issues compound"],
+    rubric: 'Real emotional reaction, not the templated GOAL_OPENER.recovery opener verbatim. Should feel like a human read what they said.',
+  },
+  {
+    name: 'texture_one_word_ok_matches',
+    history: [
+      { role: 'assistant', content: "Semaglutide and tirzepatide are what we use most, both GLP-1s. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed to your labs. Want me to get you on a quick call with the team?" },
+    ],
+    inbound: 'ok',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    rubric: 'Reply should be ONE short sentence or fragment, not a full 3-sentence pitch. Matching the energy of "ok".',
+  },
 ];
