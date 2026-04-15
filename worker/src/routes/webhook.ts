@@ -39,7 +39,7 @@ const SHUTOFF_TAGS = ['do-not-message', 'human-takeover', 'call-booked', 'custom
 const ENGAGED_TAG = 'ai-bot-engaged';
 
 const OPENER =
-  "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?";
+  "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?";
 
 const SYSTEM_CACHED = `${MIA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
 

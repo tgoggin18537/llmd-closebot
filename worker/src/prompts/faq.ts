@@ -49,10 +49,21 @@ export const FAQ: FaqEntry[] = [
       "Depends on the protocol, ranges from about $300 to $700 a month. The specialist can tell you exactly what you'd need for your situation.",
   },
   {
-    triggers: ['budget is', 'can you do it for less', 'cheaper option', 'can afford', '$200 budget'],
+    triggers: [
+      'budget is',
+      'my budget',
+      '$200 is my budget',
+      'is that possible',
+      'can you do it for less',
+      'cheaper option',
+      'can afford',
+      'i have $',
+      'can only spend',
+      'is $X doable',
+    ],
     answer:
       "Honest answer: our protocols start around $300 a month, so there's a gap from $200. The discovery call is a good place to see if any protocol fits your situation, but I don't want to promise something cheaper that may not exist.",
-    notes: 'Do not say "really flexible" or "might find something closer to your range" about pricing. Be honest about the $300 floor.',
+    notes: 'If the lead states a budget under $300, USE THIS ANSWER verbatim (adapting only the specific dollar amount). Do NOT ask "what budget are you working with" when they already told you. Do NOT say "really flexible" or "might find something closer to your range" about pricing, that is dishonest. Be honest about the $300 floor.',
   },
   {
     triggers: ['shipping', 'how long does shipping', 'when will it arrive', 'delivery time'],
