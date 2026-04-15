@@ -72,11 +72,42 @@ const CANONICAL_NAME = 'Dr. Samuel B. Lee MD';
 
 const BOOKING_LINK = 'limitlesslivingmd.com/discovery';
 
-// The opener goal-discovery question. Should appear exactly once per
-// conversation. We match a loose variant that covers the verbatim opener plus
-// natural paraphrases Claude tends to produce ("what are you hoping to work
-// on", "what are you looking to work on", etc.).
-const GOAL_MENU_QUESTION = /\bwhat (?:are you|'re you|you)\s+(?:hoping|looking|trying|wanting)\s+to\s+(?:work\s+on|focus\s+on|improve|tackle)\b/i;
+// The opener goal-discovery question family. Should appear exactly once per
+// conversation. Each of these patterns catches a real paraphrase Claude tends
+// to produce when it wants to pivot to goal discovery a second time:
+//   "what are you hoping to work on"
+//   "hoping peptides might help with"
+//   "is there something specific you're hoping"
+//   "any particular goal"
+//   "what are you after"
+const GOAL_MENU_QUESTION_PATTERNS: RegExp[] = [
+  /\bwhat (?:are you|'re you|you)\s+(?:hoping|looking|trying|wanting)\s+to\s+(?:work\s+on|focus\s+on|improve|tackle|address)\b/i,
+  /\b(?:hoping|looking|trying|wanting)\s+(?:peptides|them|this|something|anything)?\s*(?:might|to|could|can)?\s*help\s+(?:you\s+)?(?:with|out)\b/i,
+  /\bis there (?:anything|something)\s+(?:specific\s+)?(?:you're|you are|you)\s+(?:hoping|looking|trying|wanting)\b/i,
+  /\bany (?:specific|particular)\s+(?:goal|area|thing|peptide|issue|focus)\b/i,
+  /\bwhat (?:are you|'re you|you) after\b/i,
+  /\bwhat brought you\b/i,
+];
+
+function matchesGoalMenuQuestion(text: string): boolean {
+  return GOAL_MENU_QUESTION_PATTERNS.some((rx) => rx.test(text));
+}
+
+// Rough one-question-per-message heuristic. Split on sentence or clause
+// terminators, count clauses that begin with a question stem. Two or more
+// stems in one message = compound question = reject.
+// "which" and "why" are excluded because they appear in relative clauses far
+// more than in questions ("which is why they help", "why it works so well").
+// "who" is excluded for the same reason ("someone who knows").
+const QUESTION_STARTER = /^(?:what|what's|how|how's|when|where|is\s+there|is\s+it|are\s+you|are\s+there|do\s+you|does\s+it|did\s+you|can\s+you|could\s+you|would\s+you|will\s+you|should\s+you|have\s+you|has\s+it|had\s+you|any\s+specific|any\s+particular|want(?:\s+me|\s+to)?\b)\b/i;
+
+function countQuestionClauses(text: string): number {
+  const clauses = text
+    .split(/[.!?,]\s+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+  return clauses.filter((c) => QUESTION_STARTER.test(c)).length;
+}
 
 // Matches em dash, en dash, figure dash, horizontal bar. Hyphens between
 // letters handled separately (allow in URLs and words like "US-only").
@@ -179,13 +210,11 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
 
   // 4c. Reject a repeat of the goal-menu opener question. It should appear
   //     at most once per conversation. If any prior assistant message already
-  //     asked it and the candidate asks it again, force a regenerate.
+  //     asked it (any paraphrase) and the candidate asks it again, force a
+  //     regenerate.
   if (input.priorAssistantMessages && input.priorAssistantMessages.length > 0) {
-    const candidateAsks = GOAL_MENU_QUESTION.test(text);
-    if (candidateAsks) {
-      const priorAsked = input.priorAssistantMessages.some((m) =>
-        GOAL_MENU_QUESTION.test(m),
-      );
+    if (matchesGoalMenuQuestion(text)) {
+      const priorAsked = input.priorAssistantMessages.some(matchesGoalMenuQuestion);
       if (priorAsked) {
         return {
           ok: false,
@@ -194,6 +223,17 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
         };
       }
     }
+  }
+
+  // 4d. Reject compound questions. Mia asks at most one question per message.
+  //     "What's drawing you in, is there something specific you want help
+  //     with?" is two questions joined by a comma.
+  if (countQuestionClauses(text) >= 2) {
+    return {
+      ok: false,
+      reason: 'compound question (more than one question in one message)',
+      violations: [...violations, 'compound_question'],
+    };
   }
 
   // 5. Reject named staff -> regenerate.

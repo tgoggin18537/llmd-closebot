@@ -284,6 +284,59 @@ const CASES: Case[] = [
     expect: { ok: true, contains: ['What got you curious'] },
   },
 
+  // ---- BROADER GOAL-MENU PARAPHRASES ----
+  {
+    name: 'bans: "hoping peptides might help with" after goal already asked',
+    candidate: "Nice, that's a cool reason. Is there something specific you're hoping peptides might help with?",
+    priorAssistantMessages: [
+      "Hey! What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+    ],
+    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+  },
+  {
+    name: 'bans: "any specific goal" after goal already asked',
+    candidate: "Got it. Any specific goal in mind?",
+    priorAssistantMessages: [
+      "What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+    ],
+    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+  },
+  {
+    name: 'allows: "what got you curious" after goal already asked (contextual)',
+    candidate: "Nice. What got you curious about peptides?",
+    priorAssistantMessages: [
+      "What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+    ],
+    expect: { ok: true },
+  },
+
+  // ---- COMPOUND QUESTIONS ----
+  {
+    name: 'bans: compound question joined by comma',
+    candidate: "Nice, word of mouth is the best intro. What's drawing you in most, is there something specific you're hoping peptides might help with?",
+    expect: { ok: false, reasonIncludes: 'compound question' },
+  },
+  {
+    name: 'bans: two distinct questions',
+    candidate: "What got you curious? Any specific goal in mind?",
+    expect: { ok: false, reasonIncludes: 'compound question' },
+  },
+  {
+    name: 'allows: single question with preamble',
+    candidate: "Yeah that's super common. What got you curious about peptides?",
+    expect: { ok: true },
+  },
+  {
+    name: 'allows: statement + one question',
+    candidate: "Peptides work by signaling your cells. Want me to send the link?",
+    expect: { ok: true },
+  },
+  {
+    name: 'allows: two statements no questions',
+    candidate: "Yeah, that's usually a sourcing thing. Ours come from US compounding pharmacies.",
+    expect: { ok: true },
+  },
+
   // ---- LINK BUDGET ----
   {
     name: 'bans: link when budget exhausted',

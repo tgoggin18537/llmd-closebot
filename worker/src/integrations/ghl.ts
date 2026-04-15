@@ -104,13 +104,20 @@ export async function getRecentMessages(
 
 /**
  * Detect if a team member has sent a manual outbound SMS recently. If so,
- * Mia should stay silent. Heuristic: any outbound message in the last
- * `windowSeconds` whose source is not our bot marker.
+ * Mia should stay silent.
+ *
+ * Ground truth: every time Mia sends, we persist the returned GHL messageId
+ * in the Durable Object. Any outbound in the window whose id is NOT in that
+ * set was sent by a human from the inbox (or another workflow).
+ *
+ * We deliberately do not rely on the GHL `source` field because the
+ * /conversations/messages API doesn't let us stamp a custom source on a send,
+ * so everything Mia sends looks identical to a manual inbox send.
  */
 export async function wasManualOutboundRecent(
   env: GhlEnv,
   contactId: string,
-  botSourceMarker: string,
+  botGhlMessageIds: Set<string>,
   windowSeconds = 600,
 ): Promise<boolean> {
   const msgs = await getRecentMessages(env, contactId, 20);
@@ -119,7 +126,7 @@ export async function wasManualOutboundRecent(
     (m) =>
       m.direction === 'outbound' &&
       new Date(m.dateAdded).getTime() > cutoff &&
-      m.source !== botSourceMarker,
+      !botGhlMessageIds.has(m.id),
   );
 }
 

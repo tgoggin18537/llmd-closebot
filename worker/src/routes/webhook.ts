@@ -34,7 +34,6 @@ import { hasExistingPatientTag } from '../prompts/kb';
 import type { MiaState, MiaMessage } from '../memory/ContactThread';
 import type { Env } from '../env';
 
-const BOT_SOURCE_MARKER = 'mia-bot-v2';
 const SHUTOFF_TAGS = ['do-not-message', 'human-takeover', 'call-booked', 'customer'];
 const ENGAGED_TAG = 'ai-bot-engaged';
 
@@ -79,11 +78,35 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     return Response.json({ skipped: 'shutoff_tag_present', tags });
   }
 
+  // ----- Durable Object load/init (moved up so manual-outbound check can
+  //       use the set of bot-sent messageIds as ground truth) -----
+  const doId = env.CONTACT_THREAD.idFromName(contactId);
+  const stub = env.CONTACT_THREAD.get(doId);
+
+  const initRes = await stub.fetch('https://do/init', {
+    method: 'POST',
+    body: JSON.stringify({
+      contactId,
+      phone: payload.phone,
+      goal: payload.customData?.goal,
+      painPoint: payload.customData?.painPoint,
+    }),
+  });
+  let state = (await initRes.json()) as MiaState;
+
   // ----- Recent manual SMS guard -----
+  // We know which outbound messageIds Mia herself sent (persisted in the DO).
+  // If any outbound in the window has an id NOT in that set, a human teammate
+  // sent it from the inbox and Mia should stay quiet.
+  const botGhlMessageIds = new Set<string>(
+    state.messages
+      .filter((m) => m.role === 'assistant' && !!m.ghlMessageId)
+      .map((m) => m.ghlMessageId as string),
+  );
   const manualDetected = await wasManualOutboundRecent(
     { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
     contactId,
-    BOT_SOURCE_MARKER,
+    botGhlMessageIds,
     600,
   );
   if (manualDetected) {
@@ -120,21 +143,6 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     );
     return Response.json({ handled: 'existing_patient' });
   }
-
-  // ----- Durable Object load/init -----
-  const doId = env.CONTACT_THREAD.idFromName(contactId);
-  const stub = env.CONTACT_THREAD.get(doId);
-
-  const initRes = await stub.fetch('https://do/init', {
-    method: 'POST',
-    body: JSON.stringify({
-      contactId,
-      phone: payload.phone,
-      goal: payload.customData?.goal,
-      painPoint: payload.customData?.painPoint,
-    }),
-  });
-  let state = (await initRes.json()) as MiaState;
 
   // ----- Initial-touch short-circuit -----
   // Workflow 1 fires the 5-minute-after-add SMS by POSTing body=__INITIAL_TOUCH__.
