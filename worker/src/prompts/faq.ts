@@ -99,6 +99,77 @@ export const FAQ: FaqEntry[] = [
     answer:
       "Depends what you're working on. Energy and sleep can shift in days to weeks, body comp takes longer, usually 2 to 3 months for real visible change. The specialist can give you a realistic timeline for your goal.",
   },
+  {
+    triggers: ['insurance', 'do you take insurance', 'is this covered', 'will my insurance pay'],
+    answer:
+      "Peptide therapy is cash pay only, insurance doesn't cover compounded peptides. That's also why you're getting it at wholesale from a compounding pharmacy instead of retail.",
+  },
+  {
+    triggers: ['pregnant', 'pregnancy', 'breastfeeding', 'trying to conceive', 'ttc'],
+    answer:
+      "Peptides aren't for anyone pregnant, breastfeeding, or trying to conceive. The specialist can talk through options that would fit your situation on the call.",
+    notes: 'Safety critical. Never recommend peptides to pregnancy-related questions.',
+  },
+  {
+    triggers: ['bloodwork', 'blood work', 'labs', 'do i need lab', 'tests required'],
+    answer:
+      "For most protocols Dr. Lee reviews recent labs or orders them, just to make sure the protocol matches what your body actually needs. The specialist walks you through it on the call.",
+  },
+  {
+    triggers: ['side effects', 'bad reaction', 'what if i have side effects'],
+    answer:
+      "Most common one is mild soreness at the injection site, most people don't notice it past week one. Anything else, Dr. Lee adjusts the protocol to fit. You're not on your own with it.",
+  },
+  {
+    triggers: ['refund', 'money back', 'guarantee', 'can i get my money back'],
+    answer:
+      "Once a compounded prescription ships it can't be returned, pharmacy rules. If something's not working Dr. Lee adjusts the protocol rather than starting over, that's kind of the point of the physician oversight.",
+  },
+  {
+    triggers: ['consultation', 'what happens on the call', 'whats on the call', 'what is the call'],
+    answer:
+      "It's a 15 minute call with the specialist to talk through your goals, any history that matters, and which protocol would actually fit. No pressure, just figuring out if it makes sense.",
+  },
+  {
+    triggers: ['age', 'how old', 'minimum age', 'can my kid'],
+    answer:
+      "Peptide protocols are for adults only. The specialist can talk through age specifics on the call if that's part of what you're asking.",
+  },
+  {
+    triggers: ['other medications', 'currently taking', 'drug interactions', 'meds'],
+    answer:
+      "Dr. Lee reviews current meds before prescribing so nothing clashes, that's part of the protocol review. The specialist can get your list on the call.",
+  },
+  {
+    triggers: ['testosterone', 'trt', 'hrt', 'hormone replacement'],
+    answer:
+      "Peptides are our focus, not TRT or HRT directly. Some peptides influence hormone signaling, the specialist can get into whether that's relevant to what you're looking for.",
+  },
+  {
+    triggers: ['costco', 'compounding pharmacy', 'gray market', 'cheaper peptides online'],
+    answer:
+      "Gray market peptides are a gamble, quality and dosing can be all over the place. Ours come from 503A and 503B certified US pharmacies with certificates of analysis, and Dr. Samuel B. Lee MD reviews every protocol.",
+  },
+  {
+    triggers: ['new patients', 'taking new', 'accepting new'],
+    answer:
+      "Yep, new patients can still book. The 15 minute call is the first step for anyone working with Dr. Lee.",
+  },
+  {
+    triggers: ['shortage', 'glp-1 shortage', 'running out', 'availability'],
+    answer:
+      "Because we work through 503A and 503B compounding pharmacies, supply has been stable even when the brand name stuff has hit shortages. The specialist can confirm what's on hand.",
+  },
+  {
+    triggers: ['how does it work', 'whats a peptide', 'what are peptides'],
+    answer:
+      "Peptides are short chains of amino acids, basically signaling molecules your body already makes. Therapeutic ones amplify specific signals, burn fat, repair tissue, boost energy. The specialist can get into the one that fits what you want.",
+  },
+  {
+    triggers: ['can i change protocol', 'change my protocol', 'switch peptide'],
+    answer:
+      "Yeah protocols get adjusted, that's the point of physician oversight. Dr. Lee tweaks based on how you're responding.",
+  },
 ];
 
 export const OBJECTIONS: FaqEntry[] = [

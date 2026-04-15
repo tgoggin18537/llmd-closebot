@@ -5,6 +5,7 @@
  */
 
 import { handleInboundSms } from './routes/webhook';
+import { handleSimulate } from './routes/simulate';
 import type { Env } from './env';
 
 export { ContactThread } from './memory/ContactThread';
@@ -18,6 +19,9 @@ export default {
       }
       if (req.method === 'POST' && url.pathname === '/webhook/ghl/inbound-sms') {
         return await handleInboundSms(req, env);
+      }
+      if (req.method === 'POST' && url.pathname === '/debug/simulate') {
+        return await handleSimulate(req, env);
       }
       return new Response('not found', { status: 404 });
     } catch (err: any) {

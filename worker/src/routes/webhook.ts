@@ -38,6 +38,9 @@ const BOT_SOURCE_MARKER = 'mia-bot-v2';
 const SHUTOFF_TAGS = ['do-not-message', 'human-takeover', 'call-booked', 'customer'];
 const ENGAGED_TAG = 'ai-bot-engaged';
 
+const OPENER =
+  "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?";
+
 const SYSTEM_CACHED = `${MIA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
 
 export async function handleInboundSms(req: Request, env: Env): Promise<Response> {
@@ -132,6 +135,33 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     }),
   });
   let state = (await initRes.json()) as MiaState;
+
+  // ----- Initial-touch short-circuit -----
+  // Workflow 1 fires the 5-minute-after-add SMS by POSTing body=__INITIAL_TOUCH__.
+  // Send the opener verbatim, do not call Claude on a sentinel string.
+  if (inboundBody === '__INITIAL_TOUCH__') {
+    if (state.openerSent) {
+      return Response.json({ skipped: 'opener_already_sent' });
+    }
+    const sent = await sendSms(
+      { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
+      { contactId, message: OPENER },
+    );
+    await stub.fetch('https://do/append', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: { role: 'assistant', content: OPENER, at: Date.now(), ghlMessageId: sent.messageId } as MiaMessage,
+        openerSent: true,
+        newState: 'engaged',
+      }),
+    });
+    await addTag(
+      { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
+      contactId,
+      ENGAGED_TAG,
+    );
+    return Response.json({ handled: 'initial_touch', sent: OPENER });
+  }
 
   // ----- Build Claude call -----
   const turnCtx = buildTurnContext({
