@@ -126,11 +126,14 @@ export const GOLDEN: GoldenCase[] = [
   },
   {
     name: 'no_staff_names',
-    history: [],
-    inbound: 'who will be reaching out to me?',
-    state: { linkSendCount: 0, openerSent: true },
-    mustNotContain: ['Danielle', 'Lauren', 'Emily', 'Christine'],
-    mustContainAny: ['the specialist', 'our team', 'someone from the team'],
+    history: [
+      { role: 'assistant', content: "Semaglutide and tirzepatide are what we use most, both GLP-1s. Want me to get you on a quick call with the team?" },
+      { role: 'user', content: 'sure, who will i be talking to?' },
+    ],
+    inbound: 'sure, who will i be talking to?',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustNotContain: ['Danielle', 'Lauren', 'Emily', 'Christine', 'Nicole', 'Cloie'],
+    mustContainAny: ['the specialist', 'our team', 'someone from the team', 'licensed practitioner'],
   },
   {
     name: 'one_emoji_budget',
@@ -181,7 +184,15 @@ export const GOLDEN: GoldenCase[] = [
     history: [],
     inbound: 'do you guys do TRT?',
     state: { linkSendCount: 0, openerSent: true },
-    mustContainAny: ['peptides are our focus', 'not TRT', 'specialist'],
+    mustContainAny: [
+      'peptides are our focus',
+      'peptide therapy',
+      'not TRT',
+      'not directly',
+      'specialist',
+    ],
+    mustNotContain: ['yes, we do TRT', 'we offer TRT directly'],
+    rubric: 'Must be honest that peptides are the focus, not TRT. Acceptable to note some peptides influence hormone signaling. Must not claim TRT is a direct service.',
   },
   {
     name: 'vague_tell_me_more',
