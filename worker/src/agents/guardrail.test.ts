@@ -199,6 +199,56 @@ const CASES: Case[] = [
     expect: { ok: false, reasonIncludes: 'wellness-claim' },
   },
 
+  // ---- AI-SUMMARY LABEL STRIP ----
+  {
+    name: 'strips: Short version: at start',
+    candidate: "Short version: peptides are signaling molecules. Pretty cool stuff.",
+    expect: {
+      ok: true,
+      notContains: ['Short version:'],
+      contains: ['Peptides are signaling molecules'],
+      violationsIncludes: ['stripped_ai_summary_label'],
+    },
+  },
+  {
+    name: 'strips: TL;DR at start',
+    candidate: "TL;DR: tirz is the stronger one.",
+    expect: {
+      ok: true,
+      notContains: ['TL;DR', 'tl;dr'],
+      contains: ['Tirz is the stronger one'],
+      violationsIncludes: ['stripped_ai_summary_label'],
+    },
+  },
+  {
+    name: 'strips: In short, mid-message',
+    candidate: "Good question. In short, it's physician dosed.",
+    expect: {
+      ok: true,
+      notContains: ['In short,'],
+      contains: ["Good question.", "physician dosed"],
+      violationsIncludes: ['stripped_ai_summary_label'],
+    },
+  },
+  {
+    name: 'strips: Short version, mid-message after period',
+    candidate: "Nice. Short version: peptides are amino acid chains.",
+    expect: {
+      ok: true,
+      notContains: ['Short version:'],
+      contains: ['Nice.', 'peptides are amino acid chains'],
+      violationsIncludes: ['stripped_ai_summary_label'],
+    },
+  },
+  {
+    name: 'allows: "short" as a regular word (not as a summary label)',
+    candidate: "These are short peptide chains your body already makes.",
+    expect: {
+      ok: true,
+      contains: ['short peptide chains'],
+    },
+  },
+
   // ---- LINK BUDGET ----
   {
     name: 'bans: link when budget exhausted',

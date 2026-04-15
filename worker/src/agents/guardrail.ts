@@ -127,6 +127,30 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
     }
   }
 
+  // 3b. Strip AI-summary labels. These are pure tells: a real texter never
+  //     prefaces an answer with "Short version:" or "TL;DR,". Rewrite rather
+  //     than reject so we keep the content without another Claude call.
+  {
+    const before = text;
+    text = text.replace(
+      /^(?:\s*)(short version|quick version|quick summary|tl;?dr|in short|to sum up|in summary|long story short|the short answer)\s*[:,\-]\s*/i,
+      '',
+    );
+    // Also handle mid-message after a leading fragment + punctuation.
+    //   "Nice. Short version: peptides are..." -> "Nice. peptides are..."
+    // We only strip when it directly precedes substantive content, so keep
+    // the pattern anchored to a sentence-start position after . ! ? or newline.
+    text = text.replace(
+      /([.!?\n]\s+)(short version|quick version|quick summary|tl;?dr|in short|to sum up|in summary|long story short|the short answer)\s*[:,\-]\s*/gi,
+      '$1',
+    );
+    if (text !== before) {
+      violations.push('stripped_ai_summary_label');
+      // Recapitalize the first letter of the new start if we stripped a prefix.
+      text = text.replace(/^([a-z])/, (c) => c.toUpperCase());
+    }
+  }
+
   // 4. Reject banned openers -> regenerate.
   for (const rx of BANNED_OPENERS) {
     if (rx.test(text)) {

@@ -292,6 +292,22 @@ export const GOLDEN: GoldenCase[] = [
     rubric: 'Real emotional reaction, not the templated GOAL_OPENER.recovery opener verbatim. Should feel like a human read what they said.',
   },
   {
+    name: 'cold_peptide_question_no_summary_label_no_form_pivot',
+    history: [],
+    inbound: 'hey whats the deal with peptides',
+    state: { linkSendCount: 0, openerSent: false },
+    mustNotContain: [
+      'Short version:',
+      'Quick version:',
+      'TL;DR',
+      'In short,',
+      'To sum up,',
+      'what are you hoping to work on',
+    ],
+    rubric:
+      'Cold reply to a content question. Must not start with "Short version:" or any self-summary label. Must not tack on the opener goal-menu question ("what are you hoping to work on, weight loss, energy, sleep, recovery..."). A contextual follow-up like "what got you curious?" is fine. Just answering is also fine.',
+  },
+  {
     name: 'texture_one_word_ok_matches',
     history: [
       { role: 'assistant', content: "Semaglutide and tirzepatide are what we use most, both GLP-1s. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed to your labs. Want me to get you on a quick call with the team?" },

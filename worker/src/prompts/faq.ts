@@ -24,7 +24,7 @@ export const GOAL_OPENERS: Record<'energy' | 'weight' | 'recovery' | 'curious', 
   recovery:
     "That's rough, sleep and recovery issues compound everything else. Peptides basically signal your body to repair itself, which slows down as we age. Want me to send the link to chat with our specialist?",
   curious:
-    "Nice. Short version: peptides are amino acid chains that signal your cells to do specific things, burn fat, repair tissue, boost energy. Easiest way to go deeper is a quick call with our specialist.",
+    "Nice. Peptides are signaling molecules your body already makes, the therapeutic ones just amp up specific ones, some for fat loss, some for recovery, some for energy. Easiest way to find the right fit is a quick call with our specialist.",
 };
 
 export const FAQ: FaqEntry[] = [
