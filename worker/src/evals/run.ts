@@ -53,6 +53,9 @@ async function runOne(apiKey: string, model: string, c: GoldenCase): Promise<Cas
       candidate: res.text,
       linkSendCountBefore: c.state.linkSendCount ?? 0,
       isFirstMessage: !(c.state.openerSent ?? false),
+      priorAssistantMessages: c.history
+        .filter((m) => m.role === 'assistant')
+        .map((m) => m.content),
     });
     if (guard.ok) {
       draft = guard.clean;

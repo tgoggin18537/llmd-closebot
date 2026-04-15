@@ -72,6 +72,12 @@ const CANONICAL_NAME = 'Dr. Samuel B. Lee MD';
 
 const BOOKING_LINK = 'limitlesslivingmd.com/discovery';
 
+// The opener goal-discovery question. Should appear exactly once per
+// conversation. We match a loose variant that covers the verbatim opener plus
+// natural paraphrases Claude tends to produce ("what are you hoping to work
+// on", "what are you looking to work on", etc.).
+const GOAL_MENU_QUESTION = /\bwhat (?:are you|'re you|you)\s+(?:hoping|looking|trying|wanting)\s+to\s+(?:work\s+on|focus\s+on|improve|tackle)\b/i;
+
 // Matches em dash, en dash, figure dash, horizontal bar. Hyphens between
 // letters handled separately (allow in URLs and words like "US-only").
 const DASH_CHARS = /[\u2012\u2013\u2014\u2015\u2212]/g;
@@ -83,6 +89,8 @@ export type GuardrailInput = {
   candidate: string;
   linkSendCountBefore: number;
   isFirstMessage: boolean;
+  /** Prior assistant messages in this conversation (for repeat detection). */
+  priorAssistantMessages?: string[];
 };
 
 export type GuardrailResult =
@@ -166,6 +174,25 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
         reason: `banned phrase: ${rx}`,
         violations: [...violations, 'banned_phrase'],
       };
+    }
+  }
+
+  // 4c. Reject a repeat of the goal-menu opener question. It should appear
+  //     at most once per conversation. If any prior assistant message already
+  //     asked it and the candidate asks it again, force a regenerate.
+  if (input.priorAssistantMessages && input.priorAssistantMessages.length > 0) {
+    const candidateAsks = GOAL_MENU_QUESTION.test(text);
+    if (candidateAsks) {
+      const priorAsked = input.priorAssistantMessages.some((m) =>
+        GOAL_MENU_QUESTION.test(m),
+      );
+      if (priorAsked) {
+        return {
+          ok: false,
+          reason: 'repeated goal-menu question (already asked once earlier in thread)',
+          violations: [...violations, 'repeated_goal_question'],
+        };
+      }
     }
   }
 

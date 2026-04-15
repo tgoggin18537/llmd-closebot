@@ -197,6 +197,9 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
       candidate: claudeRes.text,
       linkSendCountBefore: state.linkSendCount,
       isFirstMessage: !state.openerSent,
+      priorAssistantMessages: state.messages
+        .filter((m) => m.role === 'assistant')
+        .map((m) => m.content),
     });
 
     if (guard.ok) {

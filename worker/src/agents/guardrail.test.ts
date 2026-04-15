@@ -13,6 +13,7 @@ type Case = {
   candidate: string;
   isFirstMessage?: boolean;
   linkSendCountBefore?: number;
+  priorAssistantMessages?: string[];
   expect:
     | { ok: true; contains?: string[]; notContains?: string[]; violationsIncludes?: string[] }
     | { ok: false; reasonIncludes: string };
@@ -249,6 +250,40 @@ const CASES: Case[] = [
     },
   },
 
+  // ---- REPEATED GOAL-MENU QUESTION ----
+  {
+    name: 'bans: repeats opener goal-menu after it was already asked',
+    candidate:
+      "Peptides are amino acid chains, basically signaling molecules. What are you hoping to work on?",
+    priorAssistantMessages: [
+      "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+    ],
+    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+  },
+  {
+    name: 'bans: repeats paraphrased goal-menu',
+    candidate:
+      "Makes sense. What are you looking to work on, energy or weight?",
+    priorAssistantMessages: [
+      "Hey! What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+    ],
+    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+  },
+  {
+    name: 'allows: goal-menu once (no prior history)',
+    candidate: "Nice. What are you hoping to work on, weight loss or energy?",
+    priorAssistantMessages: [],
+    expect: { ok: true, contains: ['What are you hoping to work on'] },
+  },
+  {
+    name: 'allows: contextual follow-up after prior goal-menu ask',
+    candidate: "Makes sense. What got you curious about peptides in the first place?",
+    priorAssistantMessages: [
+      "Hey! What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+    ],
+    expect: { ok: true, contains: ['What got you curious'] },
+  },
+
   // ---- LINK BUDGET ----
   {
     name: 'bans: link when budget exhausted',
@@ -283,6 +318,7 @@ function check(label: string, c: Case): { passed: boolean; detail: string } {
     candidate: c.candidate,
     linkSendCountBefore: c.linkSendCountBefore ?? 0,
     isFirstMessage: c.isFirstMessage ?? false,
+    priorAssistantMessages: c.priorAssistantMessages,
   });
 
   if (c.expect.ok) {
