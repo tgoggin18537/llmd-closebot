@@ -136,10 +136,14 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
     };
   }
 
-  // 7. Length cap. SMS-friendly.
-  if (text.length > 320) {
+  // 7. Length cap. SMS-friendly but not aggressive — we want the bridge
+  //    sentence to survive. Modern carriers concatenate long SMS into a
+  //    single message for the recipient, so 450 chars (3 segments) is a
+  //    fine hard cap.
+  const HARD_CAP = 450;
+  if (text.length > HARD_CAP) {
     violations.push('too_long_trimmed');
-    text = trimToSentences(text, 3, 320);
+    text = trimPreservingBridge(text, 3, HARD_CAP);
   }
 
   return {
@@ -150,12 +154,36 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   };
 }
 
-function trimToSentences(text: string, maxSentences: number, maxChars: number): string {
-  const parts = text.match(/[^.!?]+[.!?]?/g) ?? [text];
-  let out = '';
-  for (const p of parts.slice(0, maxSentences)) {
-    if ((out + p).length > maxChars) break;
-    out += p;
+function trimPreservingBridge(text: string, maxSentences: number, maxChars: number): string {
+  const parts = (text.match(/[^.!?]+[.!?]?/g) ?? [text]).map((s) => s.trim()).filter(Boolean);
+  if (parts.length <= maxSentences && text.length <= maxChars) return text;
+
+  // Keep first sentence (validation) + last sentence (bridge).
+  // Drop middle sentences until total length fits.
+  if (parts.length <= 2) {
+    // Nothing to drop. Hard-truncate as a fallback.
+    return text.slice(0, maxChars).trim();
   }
-  return out.trim();
+
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  const middles = parts.slice(1, -1);
+
+  let kept = `${first} ${last}`;
+  if (kept.length <= maxChars && maxSentences >= 2) {
+    // Try to add middles back in order until we hit a cap.
+    for (const m of middles) {
+      const candidate = `${first} ${m} ${last}`;
+      if (candidate.length <= maxChars) kept = candidate;
+      else break;
+    }
+    return kept;
+  }
+
+  // First + last still too long. Truncate the first, keep the bridge intact.
+  const budget = maxChars - last.length - 1;
+  if (budget > 40) {
+    return `${first.slice(0, budget).trim()} ${last}`;
+  }
+  return last;
 }
