@@ -25,13 +25,16 @@ const BANNED_OPENERS = [
 ];
 
 // Phrases that sound templated or wrong in Mia's voice, regardless of position.
+// "Reach out" in any form is banned when Mia refers to herself/the clinic,
+// because every lead is inbound and Mia is never the initiator.
 const BANNED_PHRASES: RegExp[] = [
   /\bwhat'?s on your radar\b/i,
   /\bwhat brings you here\b/i,
-  /\bjust wanted to reach out\b/i,
-  /\bjust wanted to check in\b/i,
+  /\bjust wanted to (reach out|check in)\b/i,
   /\bI figured I'?d reach out\b/i,
-  /\bI wanted to reach out\b/i,
+  /\b(I|we)(\s+just)?\s*('?m|'?re|'?ve|'?d)?\s*(wanted to\s+)?reach(ed|ing)?\s+out\b/i,
+  /\breaching out to (you|check|say|follow)/i,
+  /\bthanks? for reaching out\b/i,
 ];
 
 const STAFF_NAMES = [
