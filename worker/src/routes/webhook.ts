@@ -273,11 +273,11 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
   }
 
   // ----- Final manual-outbound check (race condition fix) -----
-  // The early check at the top of the handler catches team messages from
-  // minutes ago. But if Lauren texts at 10:49:01 and the lead replies at
-  // 10:49:30, GHL's messages API may not have indexed Lauren's outbound
-  // yet when the early check runs. By now the Claude call has burned 3-5
-  // seconds, giving GHL time to index. Check one more time before sending.
+  // The early check catches team messages from minutes ago. But if a team
+  // member and lead text within seconds of each other, GHL's API may not
+  // have indexed the team outbound yet. The Claude call burns 3-5s, plus
+  // this explicit 3s wait ensures the API has had 6-8s total to index.
+  await new Promise((r) => setTimeout(r, 3000));
   const manualDetectedLate = await wasManualOutboundRecent(
     { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
     contactId,
