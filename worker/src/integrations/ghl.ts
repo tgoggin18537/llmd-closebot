@@ -75,24 +75,24 @@ export async function getRecentMessages(
   env: GhlEnv,
   contactId: string,
   limit = 20,
-): Promise<Array<{ id: string; direction: 'inbound' | 'outbound'; body: string; dateAdded: string; userId?: string; source?: string }>> {
+): Promise<{ messages: Array<{ id: string; direction: 'inbound' | 'outbound'; body: string; dateAdded: string; userId?: string; source?: string }>; apiError: boolean }> {
   // Resolve conversation id
   const convRes = await fetch(
     `${env.baseUrl ?? DEFAULT_BASE}/conversations/search?locationId=${env.locationId}&contactId=${contactId}`,
     { headers: headers(env) },
   );
-  if (!convRes.ok) return [];
+  if (!convRes.ok) return { messages: [], apiError: true };
   const conv = (await convRes.json()) as any;
   const conversationId = conv.conversations?.[0]?.id;
-  if (!conversationId) return [];
+  if (!conversationId) return { messages: [], apiError: false };
 
   const msgRes = await fetch(
     `${env.baseUrl ?? DEFAULT_BASE}/conversations/${conversationId}/messages?limit=${limit}`,
     { headers: headers(env) },
   );
-  if (!msgRes.ok) return [];
+  if (!msgRes.ok) return { messages: [], apiError: true };
   const data = (await msgRes.json()) as any;
-  return (data.messages?.messages ?? data.messages ?? []).map((m: any) => ({
+  const messages = (data.messages?.messages ?? data.messages ?? []).map((m: any) => ({
     id: m.id,
     direction: m.direction,
     body: m.body ?? m.message ?? '',
@@ -100,6 +100,7 @@ export async function getRecentMessages(
     userId: m.userId,
     source: m.source,
   }));
+  return { messages, apiError: false };
 }
 
 /**
@@ -120,7 +121,10 @@ export async function wasManualOutboundRecent(
   botGhlMessageIds: Set<string>,
   windowSeconds = 600,
 ): Promise<boolean> {
-  const msgs = await getRecentMessages(env, contactId, 20);
+  const { messages: msgs, apiError } = await getRecentMessages(env, contactId, 20);
+  // If GHL's API is down, err on the side of caution: assume a human is
+  // active rather than letting the bot send when it shouldn't.
+  if (apiError) return true;
   const cutoff = Date.now() - windowSeconds * 1000;
   return msgs.some(
     (m) =>
