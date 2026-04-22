@@ -220,33 +220,58 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
     }
   }
 
-  // 4c. Reject a repeat of the goal-menu opener question. It should appear
-  //     at most once per conversation. If any prior assistant message already
-  //     asked it (any paraphrase) and the candidate asks it again, force a
-  //     regenerate.
+  // 4c. Repeated goal-menu question: auto-repair by stripping the question
+  //     sentence rather than rejecting. Previous reject behavior caused
+  //     guardrail exhaustion when Claude kept generating the pattern.
   if (input.priorAssistantMessages && input.priorAssistantMessages.length > 0) {
     if (matchesGoalMenuQuestion(text)) {
       const priorAsked = input.priorAssistantMessages.some(matchesGoalMenuQuestion);
       if (priorAsked) {
-        return {
-          ok: false,
-          reason: 'repeated goal-menu question (already asked once earlier in thread)',
-          violations: [...violations, 'repeated_goal_question'],
-        };
+        violations.push('stripped_repeated_goal_question');
+        // Remove the sentence containing the goal-menu question.
+        const sentences = text.split(/(?<=[.!?])\s+/);
+        const filtered = sentences.filter((s) => !matchesGoalMenuQuestion(s));
+        text = filtered.join(' ').trim() || text;
       }
     }
   }
 
-  // 4d. Reject compound questions. Mia asks at most one question per message.
-  //     Two checks: (a) more than one "?" in the message; (b) more than one
-  //     sub-clause that starts with a question stem.
-  const qMarkCount = (text.match(/\?/g) ?? []).length;
-  if (qMarkCount >= 2 || countQuestionClauses(text) >= 2) {
-    return {
-      ok: false,
-      reason: 'compound question (more than one question in one message)',
-      violations: [...violations, 'compound_question'],
-    };
+  // 4d. Compound questions: auto-repair by keeping only up to the first "?".
+  //     Previous behavior (reject + regenerate) caused guardrail exhaustion
+  //     on common inbounds. Now we surgically remove the second question
+  //     and ship what's left.
+  {
+    const qMarkCount = (text.match(/\?/g) ?? []).length;
+    if (qMarkCount >= 2 || countQuestionClauses(text) >= 2) {
+      violations.push('trimmed_compound_question');
+      if (qMarkCount >= 2) {
+        // Two "?" marks: cut everything after the first "?"
+        const firstQ = text.indexOf('?');
+        if (firstQ >= 0 && firstQ < text.length - 1) {
+          text = text.slice(0, firstQ + 1).trim();
+        }
+      } else {
+        // Comma-joined compound with one "?": split into clauses, drop
+        // everything from the second question-starter clause onward.
+        const clauses = text.split(/([.!?,]\s+)/);
+        let questionsSeen = 0;
+        let cutIndex = -1;
+        let pos = 0;
+        for (let i = 0; i < clauses.length; i++) {
+          if (QUESTION_STARTER.test(clauses[i].trim())) {
+            questionsSeen++;
+            if (questionsSeen === 2) { cutIndex = pos; break; }
+          }
+          pos += clauses[i].length;
+        }
+        if (cutIndex > 0) {
+          // Back up over the separator (comma/period + space) before the cut
+          text = text.slice(0, cutIndex).replace(/[,\s]+$/, '').trim();
+          // Add a "?" if the remaining text doesn't end with punctuation
+          if (!/[.!?]$/.test(text)) text += '?';
+        }
+      }
+    }
   }
 
   // 5. Reject named staff -> regenerate.

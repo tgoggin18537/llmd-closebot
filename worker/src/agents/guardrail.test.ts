@@ -252,22 +252,22 @@ const CASES: Case[] = [
 
   // ---- REPEATED GOAL-MENU QUESTION ----
   {
-    name: 'bans: repeats opener goal-menu after it was already asked',
+    name: 'strips: repeats opener goal-menu after it was already asked',
     candidate:
       "Peptides are amino acid chains, basically signaling molecules. What are you hoping to work on?",
     priorAssistantMessages: [
       "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
     ],
-    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+    expect: { ok: true, notContains: ['What are you hoping to work on'], violationsIncludes: ['stripped_repeated_goal_question'] },
   },
   {
-    name: 'bans: repeats paraphrased goal-menu',
+    name: 'strips: repeats paraphrased goal-menu',
     candidate:
       "Makes sense. What are you looking to work on, energy or weight?",
     priorAssistantMessages: [
       "Hey! What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
     ],
-    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+    expect: { ok: true, notContains: ['What are you looking to work on'], violationsIncludes: ['stripped_repeated_goal_question'] },
   },
   {
     name: 'allows: goal-menu once (no prior history)',
@@ -286,20 +286,20 @@ const CASES: Case[] = [
 
   // ---- BROADER GOAL-MENU PARAPHRASES ----
   {
-    name: 'bans: "hoping peptides might help with" after goal already asked',
+    name: 'strips: "hoping peptides might help with" after goal already asked',
     candidate: "Nice, that's a cool reason. Is there something specific you're hoping peptides might help with?",
     priorAssistantMessages: [
       "Hey! What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
     ],
-    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+    expect: { ok: true, notContains: ["hoping peptides might help with"], violationsIncludes: ['stripped_repeated_goal_question'] },
   },
   {
-    name: 'bans: "any specific goal" after goal already asked',
+    name: 'strips: "any specific goal" after goal already asked',
     candidate: "Got it. Any specific goal in mind?",
     priorAssistantMessages: [
       "What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
     ],
-    expect: { ok: false, reasonIncludes: 'repeated goal-menu' },
+    expect: { ok: true, notContains: ['Any specific goal'], violationsIncludes: ['stripped_repeated_goal_question'] },
   },
   {
     name: 'allows: "what got you curious" after goal already asked (contextual)',
@@ -312,14 +312,14 @@ const CASES: Case[] = [
 
   // ---- COMPOUND QUESTIONS ----
   {
-    name: 'bans: compound question joined by comma',
+    name: 'trims: compound question joined by comma',
     candidate: "Nice, word of mouth is the best intro. What's drawing you in most, is there something specific you're hoping peptides might help with?",
-    expect: { ok: false, reasonIncludes: 'compound question' },
+    expect: { ok: true, notContains: ["is there something specific"], violationsIncludes: ['trimmed_compound_question'] },
   },
   {
-    name: 'bans: two distinct questions',
+    name: 'trims: two distinct questions to first one only',
     candidate: "What got you curious? Any specific goal in mind?",
-    expect: { ok: false, reasonIncludes: 'compound question' },
+    expect: { ok: true, contains: ["What got you curious?"], notContains: ["Any specific goal"], violationsIncludes: ['trimmed_compound_question'] },
   },
   {
     name: 'allows: single question with preamble',
