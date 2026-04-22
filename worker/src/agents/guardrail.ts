@@ -22,6 +22,9 @@ const BANNED_OPENERS = [
   /^\s*thanks for reaching out/i,
   /^\s*that's a great point/i,
   /^\s*certainly[!,.\s]/i,
+  /^\s*that's wonderful/i,
+  /^\s*oof\b/i,
+  /^\s*quick q\b/i,
 ];
 
 // Phrases that sound templated or wrong in Mia's voice, regardless of position.
@@ -41,6 +44,13 @@ const BANNED_PHRASES: RegExp[] = [
   // "figured I'd reach out"
   /\bfigured\s+I'?d\s+reach\s+out\b/i,
   /\bthanks?\s+for\s+reaching\s+out\b/i,
+  // Bare "wanted to reach out" without I/we (implied self-initiator in SMS)
+  /\bwant(?:ed)?\s+to\s+reach\s+out\b/i,
+  // Over-the-top bot validation
+  /\byour (?:hope|determination|courage|strength|journey)\b.*\b(?:inspiring|amazing|wonderful|beautiful)\b/i,
+  /\bi'?m here for you\b/i,
+  /\bquick q\b/i,
+  /\boof\b/i,
 ];
 
 const STAFF_NAMES = [
@@ -63,9 +73,11 @@ const WELLNESS_CLAIM_PATTERNS: RegExp[] = [
 ];
 
 const NAME_VARIANTS = [
-  /Dr\.?\s+Samuel\s+Lee,?\s*M\.?D\b/gi,
   /Dr\.?\s+Samuel\s+B\.?\s+Lee,?\s*M\.?D\b/gi,
+  /Dr\.?\s+Samuel\s+Lee,?\s*M\.?D\b/gi,
   /Dr\.?\s+Lee,?\s*M\.?D\b/gi,
+  // Catch "Dr. Samuel Lee" without MD suffix (e.g. "Dr. Samuel Lee's clinic")
+  /Dr\.?\s+Samuel\s+Lee\b(?![\s,]*M)/gi,
 ];
 
 const CANONICAL_NAME = 'Dr. Samuel B. Lee MD';
@@ -81,7 +93,7 @@ const BOOKING_LINK = 'limitlesslivingmd.com/discovery';
 //   "any particular goal"
 //   "what are you after"
 const GOAL_MENU_QUESTION_PATTERNS: RegExp[] = [
-  /\bwhat (?:are you|'re you|you)\s+(?:hoping|looking|trying|wanting)\s+to\s+(?:work\s+on|focus\s+on|improve|tackle|address)\b/i,
+  /\bwhat (?:are you|'re you|you)\s+(?:hoping|looking|trying|wanting)\s+to\s+(?:work\s+on|focus\s+on|improve|tackle|address|shift|change)\b/i,
   /\b(?:hoping|looking|trying|wanting)\s+(?:peptides|them|this|something|anything)?\s*(?:might|to|could|can)?\s*help\s+(?:you\s+)?(?:with|out)\b/i,
   /\bis there (?:anything|something)\s+(?:specific\s+)?(?:you're|you are|you)\s+(?:hoping|looking|trying|wanting)\b/i,
   /\bany (?:specific|particular)\s+(?:goal|area|thing|peptide|issue|focus)\b/i,
