@@ -231,7 +231,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     // Guardrail never passed after N attempts. Ship a safe static fallback
     // so the lead still gets a reply, and flag for human review with the
     // full draft history so we can diagnose.
-    const FALLBACK = "hmm good one, let me think on that real quick";
+    const FALLBACK = "hey let me grab the right person for this, one sec";
     const sentFallback = await sendSms(
       { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
       { contactId, message: FALLBACK },
