@@ -18,25 +18,27 @@ export type FaqEntry = {
 
 export const GOAL_OPENERS: Record<'energy' | 'weight' | 'recovery' | 'curious', string> = {
   energy:
-    "That's super common, usually tied to cellular energy declining over time. Peptides like NAD+ work at the source, which is why they help when caffeine and vitamins haven't. Want to hop on a quick call with our specialist?",
+    "That's super common, usually tied to cellular energy declining over time. Peptide therapy works at that level, which is why it tends to help when caffeine and vitamins haven't. Want to hop on a quick call with our specialist?",
   weight:
-    "That's frustrating and usually not a willpower thing. Peptides like semaglutide and tirzepatide work on the actual hormone signals that control hunger and metabolism, which is why they help when diet alone hasn't moved the needle. Want to hop on a quick call with our specialist?",
+    "That's frustrating and usually not a willpower thing. GLP-1 therapy works on the actual hormone signals that control hunger and metabolism, which is why it helps when diet alone hasn't moved the needle. Want to hop on a quick call with our specialist?",
   recovery:
     "That's rough, sleep and recovery issues compound everything else. Peptides basically signal your body to repair itself, which slows down as we age. Want me to send the link to chat with our specialist?",
   curious:
-    "Nice. Peptides are signaling molecules your body already makes, the therapeutic ones just amp up specific ones, some for fat loss, some for recovery, some for energy. Easiest way to find the right fit is a quick call with our specialist.",
+    "Nice. Peptides are signaling molecules your body already makes, the therapeutic ones just amp up specific pathways. The specialist's the right person to figure out what fits your situation.",
 };
 
 export const FAQ: FaqEntry[] = [
   {
     triggers: ['sema vs tirz', 'semaglutide vs tirzepatide', 'difference between sema', 'which is better sema'],
     answer:
-      "Semaglutide is a single GLP-1 receptor agonist while tirzepatide targets both GLP-1 and GIP, which is why patients typically see stronger results with tirzepatide. Our specialist can help figure out which one fits your situation best on a quick call.",
+      "Honestly the specialist explains that one way better than I can, that's literally her wheelhouse. She can walk through which fits you on the call.",
+    notes: 'Do NOT compare peptides or explain mechanisms yourself. Route comparison questions to the specialist.',
   },
   {
     triggers: ['weight loss peptide', 'peptides for weight', 'what do you use for weight'],
     answer:
-      "Semaglutide and tirzepatide are what we use most, both GLP-1s. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed to your labs. Want me to get you on a quick call with the team?",
+      "We do GLP-1 therapy for weight loss. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed. Want me to get you on a quick call with the team?",
+    notes: 'Stay categorical ("GLP-1 therapy"). Do NOT name semaglutide or tirzepatide proactively. If the lead names one first, you may confirm ("yeah we use that") but do not compare or recommend.',
   },
   {
     triggers: ['fda approved', 'fda approval', 'is this fda'],
