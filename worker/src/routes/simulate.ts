@@ -24,6 +24,7 @@ const SYSTEM_CACHED = `${MIA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
 type SimInput = {
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
   inbound: string;
+  leadFirstName?: string;
   state?: {
     linkSendCount?: number;
     openerSent?: boolean;
@@ -79,6 +80,7 @@ export async function handleSimulate(req: Request, env: Env): Promise<Response> 
       candidate: res.text,
       linkSendCountBefore: state.linkSendCount ?? 0,
       isFirstMessage: !(state.openerSent ?? false),
+      leadFirstName: body.leadFirstName,
     });
     attempts.push({ raw: res.text, guard });
     if (guard.ok) {

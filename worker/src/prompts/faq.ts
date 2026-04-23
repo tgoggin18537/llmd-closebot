@@ -181,6 +181,22 @@ export const FAQ: FaqEntry[] = [
     answer:
       "Yeah protocols get adjusted, that's the point of physician oversight. Dr. Lee tweaks based on how you're responding.",
   },
+  {
+    triggers: ['muscle', 'gain muscle', 'lean muscle', 'body recomp', 'body composition', 'build muscle'],
+    answer:
+      "Yeah we have peptides that help with lean muscle and recovery, it's a pretty common goal. The specialist builds a protocol around your situation on the call.",
+  },
+  {
+    triggers: ['dismissed by doctors', 'doctors cant help', 'no one knows', 'nothing works', 'tried everything', 'brushed off'],
+    answer:
+      "yeah that's the most frustrating part, getting written off without real answers. That's kind of the whole reason Dr. Lee built the practice the way he did, he reviews the full picture before touching a protocol.",
+  },
+  {
+    triggers: ['what should i prepare', 'what to bring', 'anything i need for the call', 'do i need anything', 'what do i need for the call'],
+    answer:
+      "Just come ready to talk about what you're hoping to work on. The specialist takes it from there.",
+    notes: 'Do NOT tell the lead to bring medications, supplements, labs, or medical records. The discovery call covers goals, not medications review.',
+  },
 ];
 
 export const OBJECTIONS: FaqEntry[] = [

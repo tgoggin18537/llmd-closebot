@@ -74,6 +74,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     contactId,
   );
   const tags: string[] = contact.tags ?? [];
+  const leadFirstName: string | undefined = contact.firstName ?? contact.first_name;
   if (SHUTOFF_TAGS.some((t) => tags.includes(t))) {
     return Response.json({ skipped: 'shutoff_tag_present', tags });
   }
@@ -209,6 +210,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
       priorAssistantMessages: state.messages
         .filter((m) => m.role === 'assistant')
         .map((m) => m.content),
+      leadFirstName,
     });
 
     if (guard.ok) {
