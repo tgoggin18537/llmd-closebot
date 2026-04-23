@@ -8,12 +8,12 @@
  */
 
 import { callClaude } from '../integrations/anthropic';
-import { MIA_V2_SYSTEM_PROMPT, buildTurnContext } from '../prompts/mia.v2';
+import { AVA_V2_SYSTEM_PROMPT, buildTurnContext } from '../prompts/ava.v2';
 import { renderFaqForPrompt } from '../prompts/faq';
 import { applyGuardrail } from '../agents/guardrail';
 import { GOLDEN, type GoldenCase } from './golden';
 
-const SYSTEM_CACHED = `${MIA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
+const SYSTEM_CACHED = `${AVA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
 
 type CaseResult = {
   name: string;
@@ -88,7 +88,7 @@ function checkExpectations(c: GoldenCase, draft: string): CaseResult {
 async function main() {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
-  const model = process.env.MIA_MODEL || 'claude-sonnet-4-6';
+  const model = process.env.AVA_MODEL || 'claude-sonnet-4-6';
   const results: CaseResult[] = [];
   for (const c of GOLDEN) {
     const r = await runOne(apiKey, model, c);

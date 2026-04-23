@@ -2,7 +2,7 @@
  * Follow-up SMS bodies for the drip sequence (Nicole's schedule).
  *
  * Cadence lives in GHL workflow. These are the exact message bodies. They
- * obey Mia's voice rules (no dashes, no emojis, <=3 sentences, no staff
+ * obey Ava's voice rules (no dashes, no emojis, <=3 sentences, no staff
  * names, single booking link budget across the whole sequence).
  */
 

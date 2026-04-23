@@ -1,8 +1,8 @@
 {
-  "name": "llmd-mia-worker",
+  "name": "llmd-ava-worker",
   "version": "0.2.0",
   "private": true,
-  "description": "Mia, the Limitless Living MD SMS setter bot. Runs on Cloudflare Workers, driven by Claude.",
+  "description": "Ava, the Limitless Living MD SMS setter bot. Runs on Cloudflare Workers, driven by Claude.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

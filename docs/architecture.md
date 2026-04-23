@@ -50,14 +50,14 @@
 
 | Job | Model | Why |
 |---|---|---|
-| Primary reply (Mia) | `claude-sonnet-4-6` | Fast enough for SMS, strong instruction following, prompt caching on a ~5k-token system |
+| Primary reply (Ava) | `claude-sonnet-4-6` | Fast enough for SMS, strong instruction following, prompt caching on a ~5k-token system |
 | Existing-patient classifier | `claude-haiku-4-5-20251001` | Binary, ~50ms, cheap |
 | Future: agreed-to-book / objection type | Haiku | Same |
 | Hard conversations escalation | `claude-opus-4-6` | Reserve for cases the guardrail flags twice |
 
 ## Prompt caching
 
-The system prompt = Mia persona + rules + FAQ library + objection library,
+The system prompt = Ava persona + rules + FAQ library + objection library,
 roughly 5k tokens. It is marked `cache_control: ephemeral` on every call.
 After the first turn, each subsequent turn reads it from cache (~90% token
 discount).

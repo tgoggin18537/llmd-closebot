@@ -30,9 +30,9 @@ const BANNED_OPENERS = [
   /^\s*quick q\b/i,
 ];
 
-// Phrases that sound templated or wrong in Mia's voice, regardless of position.
+// Phrases that sound templated or wrong in Ava's voice, regardless of position.
 // "Reach out" self-referential forms are banned because every lead is inbound
-// and Mia is never the initiator. We deliberately do NOT ban generic
+// and Ava is never the initiator. We deliberately do NOT ban generic
 // "the specialist will reach out to you" since that describes workflow.
 const BANNED_PHRASES: RegExp[] = [
   /\bwhat'?s on your radar\b/i,
@@ -79,12 +79,12 @@ const BANNED_PHRASES: RegExp[] = [
   /\bready\s+to\s+take\s+the\s+next\s+step\b/i,
   /\bfit\s+your\s+goals?\s+perfectly\b/i,
   /\bmap\s+(?:out\s+)?your\s+stack\b/i,
-  // Mia is a SETTER, never a CLOSER. She never writes orders, never
+  // Ava is a SETTER, never a CLOSER. She never writes orders, never
   // commits to invoice creation, never handles fulfillment logistics.
   /\bcustom\s+order\s+(?:created|for\s+you)\b/i,
   /\bcreate(?:d)?\s+(?:a|the|your)\s+(?:custom\s+)?order\b/i,
   /\bget\s+(?:a|the|your)\s+(?:custom\s+)?order\s+(?:created|ready|going)\b/i,
-  // Mia doesn't brief leads on medications to bring to the discovery
+  // Ava doesn't brief leads on medications to bring to the discovery
   // call. Nicole explicitly said she doesn't cover meds there. Telling
   // a lead to prepare a meds list is MISINFORMATION.
   /\b(?:list\s+of\s+|any\s+)?(?:your\s+)?medications?\s+(?:or\s+supplements?\s+)?(?:you'?re\s+|you\s+are\s+)?taking\b/i,
@@ -101,6 +101,8 @@ const STAFF_NAMES = [
   'Christine',
   'Nicole',
   'Cloie',
+  'Chloie',
+  'Cheryl',
   'Janice',
   'Erin',
 ];
@@ -255,7 +257,7 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
     }
   } else if (!hadEmoji) {
     // First message must contain exactly one emoji per the opener template.
-    // If Claude dropped it from CASE A / CASE B ("Hey! This is Mia with
+    // If Claude dropped it from CASE A / CASE B ("Hey! This is Ava with
     // Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 ..."),
     // auto-insert it after the brand sentence instead of rejecting.
     const brandBoundary = /(Limitless\s+Living\s+MD\.)\s+/;

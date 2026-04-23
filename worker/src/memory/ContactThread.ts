@@ -5,14 +5,14 @@
  * does. Handles concurrent inbound webhooks serially.
  */
 
-export type MiaMessage = {
+export type AvaMessage = {
   role: 'user' | 'assistant';
   content: string;
   at: number;
   ghlMessageId?: string;
 };
 
-export type MiaState = {
+export type AvaState = {
   contactId: string;
   phone?: string;
   createdAt: number;
@@ -30,13 +30,13 @@ export type MiaState = {
   usConfirmed?: boolean;
   linkSendCount: number;
   openerSent: boolean;
-  messages: MiaMessage[];
+  messages: AvaMessage[];
   lastInboundGhlMessageId?: string;
 };
 
 export class ContactThread {
   private state: DurableObjectState;
-  private data: MiaState | null = null;
+  private data: AvaState | null = null;
 
   constructor(state: DurableObjectState, _env: unknown) {
     this.state = state;
@@ -51,7 +51,7 @@ export class ContactThread {
     }
 
     if (url.pathname === '/init' && req.method === 'POST') {
-      const body = (await req.json()) as Partial<MiaState>;
+      const body = (await req.json()) as Partial<AvaState>;
       if (!this.data) {
         this.data = {
           contactId: body.contactId!,
@@ -71,11 +71,11 @@ export class ContactThread {
 
     if (url.pathname === '/append' && req.method === 'POST') {
       const body = (await req.json()) as {
-        message: MiaMessage;
+        message: AvaMessage;
         linkSent?: boolean;
         email?: string;
         usConfirmed?: boolean;
-        newState?: MiaState['state'];
+        newState?: AvaState['state'];
         openerSent?: boolean;
         lastInboundGhlMessageId?: string;
       };
@@ -105,7 +105,7 @@ export class ContactThread {
 
   private async load() {
     if (this.data) return;
-    this.data = (await this.state.storage.get<MiaState>('state')) ?? null;
+    this.data = (await this.state.storage.get<AvaState>('state')) ?? null;
   }
 
   private async save() {

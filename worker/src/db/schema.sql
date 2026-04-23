@@ -1,4 +1,4 @@
--- D1 schema for Mia analytics. Run via `wrangler d1 migrations apply`.
+-- D1 schema for Ava analytics. Run via `wrangler d1 migrations apply`.
 
 CREATE TABLE IF NOT EXISTS turns (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -30,7 +30,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'sema_vs_tirz_direct_answer',
     history: [
-      { role: 'assistant', content: "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
       { role: 'user', content: 'weight loss' },
       { role: 'assistant', content: "That's frustrating and usually not a willpower thing. Peptides like semaglutide and tirzepatide work on the actual hormone signals that control hunger and metabolism, which is why they help when diet alone hasn't moved the needle. Want to hop on a quick call with our specialist?" },
     ],
@@ -138,7 +138,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'one_emoji_budget',
     history: [
-      { role: 'assistant', content: "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
       { role: 'user', content: 'energy' },
     ],
     inbound: 'tell me more!',
@@ -284,7 +284,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'texture_hard_share_gets_real_reaction',
     history: [
-      { role: 'assistant', content: "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
     ],
     inbound: "honestly my sleep has been garbage for like 2 years, I can't do it anymore",
     state: { linkSendCount: 0, openerSent: true },

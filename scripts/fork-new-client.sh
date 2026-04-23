@@ -139,8 +139,8 @@ export function hasExistingPatientTag(tags: string[] | undefined | null): boolea
 }
 EOF
 
-echo "→ Blanking worker/src/prompts/mia.v2.ts..."
-cat > worker/src/prompts/mia.v2.ts <<'EOF'
+echo "→ Blanking worker/src/prompts/ava.v2.ts..."
+cat > worker/src/prompts/ava.v2.ts <<'EOF'
 /**
  * System prompt for THIS CLIENT.
  *
@@ -150,7 +150,7 @@ cat > worker/src/prompts/mia.v2.ts <<'EOF'
  * spiritual/clinical vocab, team references).
  */
 
-export const MIA_V2_SYSTEM_PROMPT = `TODO: replace with full client system prompt`;
+export const AVA_V2_SYSTEM_PROMPT = `TODO: replace with full client system prompt`;
 
 /** Per-turn dynamic context injected after the static prompt (not cached). */
 export function buildTurnContext(ctx: {

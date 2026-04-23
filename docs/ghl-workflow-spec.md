@@ -1,6 +1,6 @@
-# GHL Workflow Spec (Mia V2)
+# GHL Workflow Spec (Ava V2)
 
-Click-by-click instructions for building the five workflows Mia depends
+Click-by-click instructions for building the five workflows Ava depends
 on. Do them in order. Everything lives in the **Limitless Living MD**
 sub-account, SMS number **+1 833 715 4447**.
 
@@ -13,15 +13,15 @@ sub-account, SMS number **+1 833 715 4447**.
 - **Worker URL**: `https://llmd-mia.<your-subdomain>.workers.dev`
 - **Webhook endpoint**: `${WORKER_URL}/webhook/ghl/inbound-sms`
 - **Webhook header**: `x-ghl-webhook-secret: <the value of GHL_WEBHOOK_SECRET secret>`
-- **Bot SMS source marker**: Worker sends with source tag `mia-bot-v2`
+- **Bot SMS source marker**: Worker sends with source tag `ava-bot-v2`
 
 ## Tag map
 
 | Tag | Who sets it | Effect |
 |---|---|---|
 | `test-bot` | Manual | Required during testing; production workflows should gate on this being ABSENT before going live, or on being PRESENT during test period |
-| `ai-bot-engaged` | Bot | Mia has replied at least once |
-| `needs-human` | Bot | Mia handed off (existing patient / guardrail exhausted) |
+| `ai-bot-engaged` | Bot | Ava has replied at least once |
+| `needs-human` | Bot | Ava handed off (existing patient / guardrail exhausted) |
 | `human-takeover` | Manual / auto | Bot must go silent |
 | `do-not-message` | Manual | Hard stop |
 | `call-booked` | Booking calendar | Shuts off all cadences |
@@ -41,7 +41,7 @@ Builds the protected window Nicole asked for (4/13 7:32 PM, section 1).
 
 **Automation → Workflows → + Create Workflow → Start from scratch**
 
-Name: **Mia · 01 First Touch**
+Name: **Ava · 01 First Touch**
 
 ### Triggers
 - **Trigger 1**: *Contact Tag · Added* → Tag = `new-lead`
@@ -91,11 +91,11 @@ Name: **Mia · 01 First Touch**
 
 ## Workflow 2 — Inbound Reply
 
-Routes any lead reply to Mia. Independent of Workflow 1.
+Routes any lead reply to Ava. Independent of Workflow 1.
 
 **Automation → Workflows → + Create Workflow → Start from scratch**
 
-Name: **Mia · 02 Inbound Reply**
+Name: **Ava · 02 Inbound Reply**
 
 ### Trigger
 - *Customer Replied* → Channel = SMS
@@ -133,11 +133,11 @@ Name: **Mia · 02 Inbound Reply**
 
 ## Workflow 3 — Shutoff
 
-Any time the conversation becomes a human's job, cancel Mia cleanly.
+Any time the conversation becomes a human's job, cancel Ava cleanly.
 
 **Automation → Workflows → + Create Workflow → Start from scratch**
 
-Name: **Mia · 03 Shutoff**
+Name: **Ava · 03 Shutoff**
 
 ### Triggers (any one fires)
 - Contact Tag Added: `call-booked`
@@ -150,20 +150,20 @@ Name: **Mia · 03 Shutoff**
 
 ### Steps
 1. **Remove Contact Tag** → `ai-bot-engaged`
-2. **Cancel Workflow** → *Mia · 04 Follow-up Cadence* (if active for this contact)
-3. **Create Contact Note** → body: *"Mia disengaged (trigger: {{trigger.name}})."*
+2. **Cancel Workflow** → *Ava · 04 Follow-up Cadence* (if active for this contact)
+3. **Create Contact Note** → body: *"Ava disengaged (trigger: {{trigger.name}})."*
 4. **End**
 
 ---
 
 ## Workflow 4 — Follow-up Cadence
 
-Nicole's +1d / +3d / +7d / +14d schedule. All message bodies obey Mia's
+Nicole's +1d / +3d / +7d / +14d schedule. All message bodies obey Ava's
 voice rules (no dashes, no emojis, no wellness claims).
 
 **Automation → Workflows → + Create Workflow → Start from scratch**
 
-Name: **Mia · 04 Follow-up Cadence**
+Name: **Ava · 04 Follow-up Cadence**
 
 ### Trigger
 - Contact Tag Added: `ai-bot-engaged`
@@ -196,11 +196,11 @@ Name: **Mia · 04 Follow-up Cadence**
 
 ## Workflow 5 — Existing-Patient / Handoff Alert
 
-Surfaces to the team when Mia decides a human is needed.
+Surfaces to the team when Ava decides a human is needed.
 
 **Automation → Workflows → + Create Workflow → Start from scratch**
 
-Name: **Mia · 05 Needs-Human Alert**
+Name: **Ava · 05 Needs-Human Alert**
 
 ### Trigger
 - Contact Tag Added: `needs-human`
@@ -209,7 +209,7 @@ Name: **Mia · 05 Needs-Human Alert**
 1. **Internal Notification** → Send Email
    - To: `lauren@limitlesslivingmd.com`
    - CC: `info@limitlesslivingmd.com`
-   - Subject: *Mia flagged a conversation, needs human takeover*
+   - Subject: *Ava flagged a conversation, needs human takeover*
    - Body: Contact {{contact.first_name}} {{contact.last_name}} ({{contact.phone}}). Open: `https://app.gohighlevel.com/v2/location/{{location.id}}/contacts/detail/{{contact.id}}`
 2. **Internal Notification** → Push (optional, to Lauren's mobile app)
 3. **Create Task** → Assignee: Lauren → Title: *Take over SMS conversation* → Due: today
@@ -219,7 +219,7 @@ Name: **Mia · 05 Needs-Human Alert**
 
 ## Duplicate-message prevention
 
-Lauren reported Mia sending the same response twice on 4/14.
+Lauren reported Ava sending the same response twice on 4/14.
 
 **Three layers of defense:**
 
@@ -247,7 +247,7 @@ Use a test contact tagged `test-bot`.
 - [ ] Text the LLMD line from a fresh number, confirm first touch fires exactly once after 5-minute delay
 - [ ] Confirm `ai-bot-engaged` tag applied after first touch
 - [ ] Reply to the bot; confirm reply is processed exactly once (check GHL execution log)
-- [ ] Add `human-takeover` tag mid-conversation; send another inbound; confirm Mia does NOT reply
+- [ ] Add `human-takeover` tag mid-conversation; send another inbound; confirm Ava does NOT reply
 - [ ] Add `tirzepatide` tag on a test contact; send inbound; confirm `needs-human` is applied and Workflow 5 fires the email
 - [ ] Let a test contact go silent 24h, confirm +1d message fires
 - [ ] Run `npm run eval` in `worker/` — all 13 golden cases pass

@@ -23,7 +23,7 @@ import {
   sendSms,
   wasManualOutboundRecent,
 } from '../integrations/ghl';
-import { MIA_V2_SYSTEM_PROMPT, buildTurnContext } from '../prompts/mia.v2';
+import { AVA_V2_SYSTEM_PROMPT, buildTurnContext } from '../prompts/ava.v2';
 import { renderFaqForPrompt } from '../prompts/faq';
 import { applyGuardrail } from '../agents/guardrail';
 import {
@@ -31,16 +31,16 @@ import {
   extractEmail,
 } from '../agents/classifier';
 import { hasExistingPatientTag } from '../prompts/kb';
-import type { MiaState, MiaMessage } from '../memory/ContactThread';
+import type { AvaState, AvaMessage } from '../memory/ContactThread';
 import type { Env } from '../env';
 
 const SHUTOFF_TAGS = ['do-not-message', 'human-takeover', 'call-booked', 'customer'];
 const ENGAGED_TAG = 'ai-bot-engaged';
 
 const OPENER =
-  "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?";
+  "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?";
 
-const SYSTEM_CACHED = `${MIA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
+const SYSTEM_CACHED = `${AVA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
 
 export async function handleInboundSms(req: Request, env: Env): Promise<Response> {
   const payload = (await req.json()) as any;
@@ -93,12 +93,12 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
       painPoint: payload.customData?.painPoint,
     }),
   });
-  let state = (await initRes.json()) as MiaState;
+  let state = (await initRes.json()) as AvaState;
 
   // ----- Recent manual SMS guard -----
-  // We know which outbound messageIds Mia herself sent (persisted in the DO).
+  // We know which outbound messageIds Ava herself sent (persisted in the DO).
   // If any outbound in the window has an id NOT in that set, a human teammate
-  // sent it from the inbox and Mia should stay quiet.
+  // sent it from the inbox and Ava should stay quiet.
   const botGhlMessageIds = new Set<string>(
     state.messages
       .filter((m) => m.role === 'assistant' && !!m.ghlMessageId)
@@ -140,7 +140,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     await addContactNote(
       { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
       contactId,
-      `[Mia] Existing-patient signal detected. Inbound: "${inboundBody}". Team action needed.`,
+      `[Ava] Existing-patient signal detected. Inbound: "${inboundBody}". Team action needed.`,
     );
     return Response.json({ handled: 'existing_patient' });
   }
@@ -159,7 +159,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     await stub.fetch('https://do/append', {
       method: 'POST',
       body: JSON.stringify({
-        message: { role: 'assistant', content: OPENER, at: Date.now(), ghlMessageId: sent.messageId } as MiaMessage,
+        message: { role: 'assistant', content: OPENER, at: Date.now(), ghlMessageId: sent.messageId } as AvaMessage,
         openerSent: true,
         newState: 'engaged',
       }),
@@ -195,7 +195,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const claudeRes = await callClaude({
       apiKey: env.ANTHROPIC_API_KEY,
-      model: env.MIA_MODEL || 'claude-sonnet-4-6',
+      model: env.AVA_MODEL || 'claude-sonnet-4-6',
       systemCached: SYSTEM_CACHED,
       systemDynamic: turnCtx,
       messages: history,
@@ -249,20 +249,20 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
     await addContactNote(
       { locationId: env.GHL_LOCATION_ID, apiKey: env.GHL_API_KEY },
       contactId,
-      `[Mia] Guardrail exhausted after ${maxAttempts} attempts. Sent fallback "${FALLBACK}". Inbound: "${inboundBody}".\nDrafts:\n${draftDump}`,
+      `[Ava] Guardrail exhausted after ${maxAttempts} attempts. Sent fallback "${FALLBACK}". Inbound: "${inboundBody}".\nDrafts:\n${draftDump}`,
     );
     // Persist the fallback to DO so it's in history going forward.
     await stub.fetch('https://do/append', {
       method: 'POST',
       body: JSON.stringify({
-        message: { role: 'user', content: inboundBody, at: Date.now(), ghlMessageId: inboundMessageId } as MiaMessage,
+        message: { role: 'user', content: inboundBody, at: Date.now(), ghlMessageId: inboundMessageId } as AvaMessage,
         lastInboundGhlMessageId: inboundMessageId,
       }),
     });
     await stub.fetch('https://do/append', {
       method: 'POST',
       body: JSON.stringify({
-        message: { role: 'assistant', content: FALLBACK, at: Date.now(), ghlMessageId: sentFallback.messageId } as MiaMessage,
+        message: { role: 'assistant', content: FALLBACK, at: Date.now(), ghlMessageId: sentFallback.messageId } as AvaMessage,
       }),
     });
     return Response.json({
@@ -308,7 +308,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
   await stub.fetch('https://do/append', {
     method: 'POST',
     body: JSON.stringify({
-      message: { role: 'user', content: inboundBody, at: Date.now(), ghlMessageId: inboundMessageId } as MiaMessage,
+      message: { role: 'user', content: inboundBody, at: Date.now(), ghlMessageId: inboundMessageId } as AvaMessage,
       lastInboundGhlMessageId: inboundMessageId,
       email: emailSeen,
     }),
@@ -316,7 +316,7 @@ export async function handleInboundSms(req: Request, env: Env): Promise<Response
   await stub.fetch('https://do/append', {
     method: 'POST',
     body: JSON.stringify({
-      message: { role: 'assistant', content: candidate, at: Date.now(), ghlMessageId: sent.messageId } as MiaMessage,
+      message: { role: 'assistant', content: candidate, at: Date.now(), ghlMessageId: sent.messageId } as AvaMessage,
       linkSent: linkSentThisTurn,
       openerSent: true,
       newState: state.state === 'new' ? 'engaged' : undefined,

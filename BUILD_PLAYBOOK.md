@@ -116,7 +116,7 @@ These aren't LLMD-specific. They apply to any voice-matched bot.
    - List of existing-patient tags in their CRM
    - **Voice samples — 50-150 real conversations that converted.** Best input for voice matching.
 2. **Analyze conversations.** Derive: opener structure, average reply length, rhythm/cadence, their actual vocabulary, objection patterns, when they invite to a call, how they handle stalls. Look for the "tells" that make this specific SDR sound like a person.
-3. **Write the system prompt** (`prompts/<name>.ts`). Use llmd's `mia.v2.ts` as template. Keep universal voice rules. Replace client-specific sections.
+3. **Write the system prompt** (`prompts/<name>.ts`). Use llmd's `ava.v2.ts` as template. Keep universal voice rules. Replace client-specific sections.
 4. **Build the FAQ library** (`prompts/faq.ts`). Use client's approved answers verbatim where possible. Add `notes` on when to use verbatim vs adapt.
 5. **Write goal openers** — one per goal. 1-3 sentences each. No compound questions, no wellness claims.
 6. **Build golden eval cases** (`evals/golden.ts`). One per failure pattern above + one per major FAQ. Each case has `mustContainAny` / `mustNotContain` / `rubric`.
@@ -132,7 +132,7 @@ These aren't LLMD-specific. They apply to any voice-matched bot.
 ## GHL workflow map (all clients)
 
 - **Workflow 1 — First Touch.** 5-min delay after lead add → POST webhook with body `__INITIAL_TOUCH__` → opener sent verbatim.
-- **Workflow 2 — Inbound Reply.** Customer Replied (SMS) → If/Else shutoff tags → POST webhook with inbound → Mia responds. 30s wait → end.
+- **Workflow 2 — Inbound Reply.** Customer Replied (SMS) → If/Else shutoff tags → POST webhook with inbound → Ava responds. 30s wait → end.
 - **Workflow 3 — Shutoff.** On manual outbound SMS from team OR on shutoff tag add → stop all bot workflows on contact.
 - **Workflow 4 — Follow-up Cadence.** +1d, +3d, +7d, +14d drips if no response and not shutoff.
 - **Workflow 5 — Needs-Human Alert.** When tag `needs-human` is added, notify team (Slack/SMS/email).

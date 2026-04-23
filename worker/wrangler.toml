@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # Defaults. Override per-env below.
 [vars]
-MIA_MODEL = "claude-opus-4-6"
+AVA_MODEL = "claude-opus-4-6"
 
 # Secrets (set with `wrangler secret put NAME`):
 #   ANTHROPIC_API_KEY

@@ -1,7 +1,7 @@
 # ghl-setup
 
 Tools and instructions for bringing a GoHighLevel sub-account online with
-Mia V2.
+Ava V2.
 
 ## One-time setup (per GHL sub-account)
 
@@ -59,5 +59,5 @@ after step 2.
 
 ### 4. Test
 
-Tag a test contact with `test-bot`, text the LLMD line, verify Mia
+Tag a test contact with `test-bot`, text the LLMD line, verify Ava
 responds. Then adversarial-test with Lauren/Nicole until zero flags.

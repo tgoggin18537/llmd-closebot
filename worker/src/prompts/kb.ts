@@ -26,7 +26,7 @@ export const LLMD_KB = {
     // The GHL widget URL is canonical. Funnel URL is a marketing redirect.
     bookingLinkGhl: 'https://api.leadconnectorhq.com/widget/bookings/15min-peptidediscoverycall',
     funnelLink: 'https://discover.limitlesslivingmd.com/Booking',
-    // What the team says in SMS today. KEEP IN SYNC with mia.v2.ts prompt.
+    // What the team says in SMS today. KEEP IN SYNC with ava.v2.ts prompt.
     smsBookingLink: 'limitlesslivingmd.com/discovery',
     instagram: '@limitlesslivingmd',
   },

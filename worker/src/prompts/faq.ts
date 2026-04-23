@@ -2,7 +2,7 @@
  * Approved FAQ and objection answers.
  *
  * These are the tested, team-approved answers to common questions. They are
- * injected into the system prompt as a reference library. Mia should stay
+ * injected into the system prompt as a reference library. Ava should stay
  * close to verbatim on facts while adapting phrasing to flow with the
  * conversation. Never invent new facts.
  *

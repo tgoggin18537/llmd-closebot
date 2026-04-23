@@ -2,11 +2,11 @@
  * /debug/simulate
  *
  * Dry-run endpoint. Takes a conversation history and the latest user
- * message, returns what Mia would reply WITHOUT sending anything through
+ * message, returns what Ava would reply WITHOUT sending anything through
  * GHL and WITHOUT persisting to the Durable Object.
  *
  * Used for:
- *  - Testing Mia before GHL workflows are wired up.
+ *  - Testing Ava before GHL workflows are wired up.
  *  - Lauren/Nicole adversarial testing via curl or a tiny web UI.
  *  - CI eval runs against the live Worker.
  *
@@ -14,12 +14,12 @@
  */
 
 import { callClaude } from '../integrations/anthropic';
-import { MIA_V2_SYSTEM_PROMPT, buildTurnContext } from '../prompts/mia.v2';
+import { AVA_V2_SYSTEM_PROMPT, buildTurnContext } from '../prompts/ava.v2';
 import { renderFaqForPrompt } from '../prompts/faq';
 import { applyGuardrail } from '../agents/guardrail';
 import type { Env } from '../env';
 
-const SYSTEM_CACHED = `${MIA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
+const SYSTEM_CACHED = `${AVA_V2_SYSTEM_PROMPT}\n\n${renderFaqForPrompt()}`;
 
 type SimInput = {
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -69,7 +69,7 @@ export async function handleSimulate(req: Request, env: Env): Promise<Response> 
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await callClaude({
       apiKey: env.ANTHROPIC_API_KEY,
-      model: env.MIA_MODEL || 'claude-sonnet-4-6',
+      model: env.AVA_MODEL || 'claude-sonnet-4-6',
       systemCached: SYSTEM_CACHED,
       systemDynamic: turnCtx,
       messages: history,

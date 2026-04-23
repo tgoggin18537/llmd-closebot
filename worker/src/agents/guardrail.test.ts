@@ -74,7 +74,7 @@ const CASES: Case[] = [
     expect: { ok: false, reasonIncludes: 'banned phrase' },
   },
   {
-    name: 'ALLOWS: the specialist will reach out (not Mia-as-initiator)',
+    name: 'ALLOWS: the specialist will reach out (not Ava-as-initiator)',
     candidate: "Cool, the specialist will reach out to you to schedule.",
     expect: { ok: true, notContains: [] },
   },
@@ -154,7 +154,7 @@ const CASES: Case[] = [
   },
   {
     name: 'allows: emoji in first message',
-    candidate: "Hey! This is Mia 🙂 We do peptide therapy.",
+    candidate: "Hey! This is Ava 🙂 We do peptide therapy.",
     isFirstMessage: true,
     expect: { ok: true, contains: ['🙂'] },
   },
@@ -257,7 +257,7 @@ const CASES: Case[] = [
     candidate:
       "Peptides are amino acid chains, basically signaling molecules. What are you hoping to work on?",
     priorAssistantMessages: [
-      "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
+      "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?",
     ],
     expect: { ok: true, notContains: ['What are you hoping to work on'], violationsIncludes: ['stripped_repeated_goal_question'] },
   },
@@ -549,7 +549,7 @@ const CASES: Case[] = [
   {
     name: 'repairs: missing emoji in CASE B first message',
     candidate:
-      "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. We do peptide therapy, so the protocols really depend on what you're trying to work on.",
+      "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD. We do peptide therapy, so the protocols really depend on what you're trying to work on.",
     isFirstMessage: true,
     expect: {
       ok: true,
@@ -559,7 +559,7 @@ const CASES: Case[] = [
   },
   {
     name: 'preserves: emoji already present in first message',
-    candidate: "Hey! This is Mia with Dr. Samuel B. Lee MD's office at Limitless Living MD. \u{1F642} We do peptide therapy.",
+    candidate: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD. \u{1F642} We do peptide therapy.",
     isFirstMessage: true,
     expect: { ok: true, contains: ['\u{1F642}'] },
   },
