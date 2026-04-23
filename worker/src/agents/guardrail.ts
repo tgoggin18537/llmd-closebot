@@ -23,6 +23,9 @@ const BANNED_OPENERS = [
   /^\s*that's a great point/i,
   /^\s*certainly[!,.\s]/i,
   /^\s*that's wonderful/i,
+  /^\s*of course[!,.\s]/i,
+  /^\s*thank you for sharing/i,
+  /^\s*thanks for sharing/i,
   /^\s*oof\b/i,
   /^\s*quick q\b/i,
 ];
@@ -51,6 +54,44 @@ const BANNED_PHRASES: RegExp[] = [
   /\bi'?m here for you\b/i,
   /\bquick q\b/i,
   /\boof\b/i,
+  // Filler-prefix sneak-throughs past the ^-anchored banned opener check.
+  // "Yeah absolutely" / "yep totally" / "oh of course" are still bot tells.
+  /\b(?:yeah|yea|yep|yup|oh|ohh+|well|ok|okay)[\s,]+(?:absolutely|totally|of\s+course|certainly|definitely)\b/i,
+  // Sales-jargon tells. "Build a stack", "build you a stack", "peptide stack",
+  // "a stack for you". The word "stack" is gym-bro lingo and alien to our
+  // 40-59yo core market; the FAQ never uses it.
+  /\b(?:build|building|built)\s+(?:you\s+)?a\s+stack\b/i,
+  /\b(?:a|your|the|peptide|custom)\s+stack\s+(?:for|around|of|that|to)\b/i,
+  /\bstack\s+around\s+(?:your|both)\s+goals?\b/i,
+  // Brochure-pair speak.
+  /\bpair\s+(?:really\s+)?well\s+together\b/i,
+  /\bwork\s+(?:really\s+)?well\s+together\s+for\b/i,
+  // Over-confident sales handwave.
+  /\btotally\s+doable\b/i,
+  /\bboth\s+totally\s+doable\b/i,
+  // "that's actually" LLM tic (more than once in a message is a tell).
+  // Single use is allowed; the pattern below catches the "that's actually"
+  // + "that's actually" repetition or "X is actually Y, and Z is actually W".
+  /\bactually\s+[a-z]+\b.*\bactually\s+[a-z]+\b/i,
+  // Observed live tells from the team's old GHL bot. Each of these was
+  // flagged as wrong by Lauren/Nicole/Danielle and is OFF-BRAND.
+  /\bthank(?:s)?\s+(?:you\s+)?for\s+sharing\b/i,
+  /\bready\s+to\s+take\s+the\s+next\s+step\b/i,
+  /\bfit\s+your\s+goals?\s+perfectly\b/i,
+  /\bmap\s+(?:out\s+)?your\s+stack\b/i,
+  // Mia is a SETTER, never a CLOSER. She never writes orders, never
+  // commits to invoice creation, never handles fulfillment logistics.
+  /\bcustom\s+order\s+(?:created|for\s+you)\b/i,
+  /\bcreate(?:d)?\s+(?:a|the|your)\s+(?:custom\s+)?order\b/i,
+  /\bget\s+(?:a|the|your)\s+(?:custom\s+)?order\s+(?:created|ready|going)\b/i,
+  // Mia doesn't brief leads on medications to bring to the discovery
+  // call. Nicole explicitly said she doesn't cover meds there. Telling
+  // a lead to prepare a meds list is MISINFORMATION.
+  /\b(?:list\s+of\s+|any\s+)?(?:your\s+)?medications?\s+(?:or\s+supplements?\s+)?(?:you'?re\s+|you\s+are\s+)?taking\b/i,
+  /\b(?:bring|prepare|prep|have\s+ready)\s+(?:a\s+)?list\s+of\s+(?:your\s+)?(?:current\s+)?medications?\b/i,
+  // Therapy-speak validators common in LLM wellness drafts.
+  /\byou'?re\s+not\s+alone\b/i,
+  /\bmore\s+common\s+than\s+you\s+(?:think|'d\s+think|might\s+think)\b/i,
 ];
 
 const STAFF_NAMES = [
@@ -70,7 +111,32 @@ const WELLNESS_CLAIM_PATTERNS: RegExp[] = [
   /clear,?\s*energized,?\s*and\s*balanced/i,
   /feel like yourself again/i,
   /reclaim your vitality/i,
+  // Observed live in Nicole's bot: "help your body restore its own balance
+  // rather than forcing it". Classic wellness marketing phrasing that trips
+  // carrier filters and has no clinical basis to stand on.
+  /\brestore\s+(?:your|its|the)\s+(?:own\s+)?(?:natural\s+)?balance\b/i,
+  /\brather\s+than\s+forcing\s+it\b/i,
+  /\brestore\s+(?:your|its)\s+(?:natural\s+)?harmony\b/i,
 ];
+
+// Catalog dump: "PeptideA for X, PeptideB for Y, PeptideC for Z" is a brochure,
+// not a text. Real texters pick one thing and go deeper. Three or more
+// "PeptideName for short-phrase" items separated by commas triggers reject.
+//
+// Peptide-name shape is deliberately narrow to avoid false-positives on
+// generic phrases like "some for fat loss, some for recovery, some for
+// energy" (acceptable in openers). A peptide name here must either:
+//   - have 2+ consecutive uppercase letters (BPC, NAD, GHK, GLP, TB, CJC), or
+//   - be a Name-Number hyphenated form (BPC-157, TB-500, CJC-1295), or
+//   - end in a peptide-family suffix (-glutide, -relin, -tide, -orelin).
+const PEPTIDE_NAME_SRC = String.raw`(?:[A-Z]{2,}[A-Za-z0-9+]*(?:[-\s][A-Za-z0-9]+)?|[A-Z][A-Za-z]*[-][0-9]+|[a-z]+(?:glutide|orelin|relin|tide))`;
+const CATALOG_DUMP_PATTERN = new RegExp(
+  String.raw`\b${PEPTIDE_NAME_SRC}\s+for\s+[a-z][a-z \-]{1,30}?,\s+${PEPTIDE_NAME_SRC}\s+for\s+[a-z][a-z \-]{1,30}?,\s+${PEPTIDE_NAME_SRC}\s+for\b`,
+);
+
+// The canonical opener emoji. Inserted after "Limitless Living MD." on first
+// message if Claude dropped it from the CASE A / CASE B templates.
+const OPENER_EMOJI = '\u{1F642}';
 
 const NAME_VARIANTS = [
   /Dr\.?\s+Samuel\s+B\.?\s+Lee,?\s*M\.?D\b/gi,
@@ -134,6 +200,13 @@ export type GuardrailInput = {
   isFirstMessage: boolean;
   /** Prior assistant messages in this conversation (for repeat detection). */
   priorAssistantMessages?: string[];
+  /**
+   * Lead's first name, if known from the GHL contact. When present, the
+   * guardrail rejects any draft that uses the name directly, because real
+   * texters almost never address the recipient by name in SMS. "Patricia,
+   * that's a lot" reads like a sales script or therapist, not a friend.
+   */
+  leadFirstName?: string;
 };
 
 export type GuardrailResult =
@@ -170,11 +243,25 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   }
 
   // 3. Strip emoji unless this is the first message.
+  // Note: `.test()` on a /g regex is stateful (maintains lastIndex). Reset
+  // before each test so the module-level EMOJI_REGEX doesn't drag state
+  // across requests in a long-lived Worker process.
+  EMOJI_REGEX.lastIndex = 0;
+  const hadEmoji = EMOJI_REGEX.test(text);
   if (!input.isFirstMessage) {
-    const hadEmoji = EMOJI_REGEX.test(text);
     if (hadEmoji) {
       violations.push('stripped_emoji_after_opener');
       text = text.replace(EMOJI_REGEX, '').replace(/\s{2,}/g, ' ').trim();
+    }
+  } else if (!hadEmoji) {
+    // First message must contain exactly one emoji per the opener template.
+    // If Claude dropped it from CASE A / CASE B ("Hey! This is Mia with
+    // Dr. Samuel B. Lee MD's office at Limitless Living MD. 🙂 ..."),
+    // auto-insert it after the brand sentence instead of rejecting.
+    const brandBoundary = /(Limitless\s+Living\s+MD\.)\s+/;
+    if (brandBoundary.test(text)) {
+      text = text.replace(brandBoundary, `$1 ${OPENER_EMOJI} `);
+      violations.push('inserted_missing_opener_emoji');
     }
   }
 
@@ -216,6 +303,32 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
         ok: false,
         reason: `banned phrase: ${rx}`,
         violations: [...violations, 'banned_phrase'],
+      };
+    }
+  }
+
+  // 4b-i. Reject catalog dump. Listing 3+ peptides with functions separated
+  //       by commas reads like a brochure. Regenerate with one specific.
+  if (CATALOG_DUMP_PATTERN.test(text)) {
+    return {
+      ok: false,
+      reason: 'catalog dump detected (3+ "X for Y" items in a row). pick ONE specific and go deeper',
+      violations: [...violations, 'catalog_dump'],
+    };
+  }
+
+  // 4b-ii. Reject first-name addressing. Real texters do not open messages
+  //        with "Patricia, that's...". If the GHL contact's firstName is
+  //        known, reject any draft where the name appears at the start of
+  //        a sentence followed by a comma (the addressing pattern).
+  if (input.leadFirstName && input.leadFirstName.trim().length >= 2) {
+    const esc = input.leadFirstName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const addressRx = new RegExp(`(?:^|[.!?]\\s+)${esc}\\s*,`, 'i');
+    if (addressRx.test(text)) {
+      return {
+        ok: false,
+        reason: `addressed lead by first name ("${input.leadFirstName}"). real texts don't do this`,
+        violations: [...violations, 'addressed_by_name'],
       };
     }
   }
