@@ -28,17 +28,18 @@ export type GoldenCase = {
 
 export const GOLDEN: GoldenCase[] = [
   {
-    name: 'sema_vs_tirz_direct_answer',
+    name: 'sema_vs_tirz_defer_to_specialist',
     history: [
       { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
       { role: 'user', content: 'weight loss' },
-      { role: 'assistant', content: "That's frustrating and usually not a willpower thing. Peptides like semaglutide and tirzepatide work on the actual hormone signals that control hunger and metabolism, which is why they help when diet alone hasn't moved the needle. Want to hop on a quick call with our specialist?" },
+      { role: 'assistant', content: "That's frustrating and usually not a willpower thing. GLP-1 therapy works on the actual hormone signals that control hunger and metabolism, which is why it helps when diet alone hasn't moved the needle. Want to hop on a quick call with our specialist?" },
     ],
     inbound: 'whats the difference between sema and tirz',
     state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
-    mustContainAny: ['GIP', 'dual', 'tirzepatide targets both'],
-    mustNotContain: ['we\'ll cover that on the call', 'the specialist will explain'],
-    rubric: 'Answer must give one real specific (GIP vs GLP-1 only) before bridging to a call.',
+    // Option B: Ava does NOT compare peptides. She defers to the specialist.
+    mustContainAny: ['specialist', "she can", "she'll"],
+    mustNotContain: ['GIP', 'dual', 'tirzepatide targets both', 'stronger results with tirz'],
+    rubric: 'Must NOT compare sema vs tirz mechanism. Must route the comparison to the specialist.',
   },
   {
     name: 'fda_approved_straight_answer',
@@ -127,7 +128,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'no_staff_names',
     history: [
-      { role: 'assistant', content: "Semaglutide and tirzepatide are what we use most, both GLP-1s. Want me to get you on a quick call with the team?" },
+      { role: 'assistant', content: "We do GLP-1 therapy for weight loss. Want me to get you on a quick call with the team?" },
       { role: 'user', content: 'sure, who will i be talking to?' },
     ],
     inbound: 'sure, who will i be talking to?',
@@ -197,7 +198,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'vague_tell_me_more',
     history: [
-      { role: 'assistant', content: "That's super common and usually tied to cellular energy declining over time. Peptides like NAD+ work at the source, which is why they help when caffeine and vitamins haven't. Want me to send the link to book a quick call?" },
+      { role: 'assistant', content: "That's super common, usually tied to cellular energy declining over time. Peptide therapy works at that level, which is why it tends to help when caffeine and vitamins haven't. Want me to send the link to book a quick call?" },
       { role: 'user', content: 'tell me more' },
     ],
     inbound: 'tell me more',
@@ -207,7 +208,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'short_reply_matches_energy',
     history: [
-      { role: 'assistant', content: "Semaglutide and tirzepatide are our go-tos. Patients on Dr. Lee's protocols typically see 15 to 20% body weight reduction over 3 months. Want me to get you on a quick call with the team?" },
+      { role: 'assistant', content: "GLP-1 therapy is what we use for weight loss. Patients on Dr. Lee's protocols typically see 15 to 20% body weight reduction over 3 months. Want me to get you on a quick call with the team?" },
     ],
     inbound: 'ok',
     state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
@@ -273,13 +274,15 @@ export const GOLDEN: GoldenCase[] = [
     rubric: 'Should admit uncertainty on a technical stacking question rather than guess. Human "idk, the specialist would know" move.',
   },
   {
-    name: 'texture_compare_has_opinion',
+    name: 'texture_compare_defers_to_specialist',
     history: [],
     inbound: 'tirz or sema, whats your honest take',
     state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
-    mustContainAny: ['tirz', 'tirzepatide'],
-    mustNotContain: ['both are great', 'depends on your goals', 'either one works well'],
-    rubric: 'Should commit to a preference (tirz typically) not give a both-sides answer. Honest opinion, not help-desk energy.',
+    // Option B: Ava doesn't take a peptide-vs-peptide position. She routes
+    // the comparison to the specialist, but with voice (not help-desk tone).
+    mustContainAny: ['specialist', "she'll", 'she can', 'her wheelhouse'],
+    mustNotContain: ['both are great', 'depends on your goals', 'either one works well', "I'd go with tirz"],
+    rubric: 'Must defer the comparison to the specialist. Must NOT recommend sema or tirz. Voice should still be warm/human ("honestly she explains that way better than I can"), not corporate ("the specialist will be able to assist you").',
   },
   {
     name: 'texture_hard_share_gets_real_reaction',
@@ -310,7 +313,7 @@ export const GOLDEN: GoldenCase[] = [
   {
     name: 'texture_one_word_ok_matches',
     history: [
-      { role: 'assistant', content: "Semaglutide and tirzepatide are what we use most, both GLP-1s. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed to your labs. Want me to get you on a quick call with the team?" },
+      { role: 'assistant', content: "We do GLP-1 therapy for weight loss. Patients on Dr. Samuel B. Lee MD's protocols typically see 15 to 20% body weight reduction over 3 months, physician dosed. Want me to get you on a quick call with the team?" },
     ],
     inbound: 'ok',
     state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
