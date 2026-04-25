@@ -92,6 +92,11 @@ const BANNED_PHRASES: RegExp[] = [
   // Therapy-speak validators common in LLM wellness drafts.
   /\byou'?re\s+not\s+alone\b/i,
   /\bmore\s+common\s+than\s+you\s+(?:think|'d\s+think|might\s+think)\b/i,
+  // Tech-failure apologies Claude sometimes invents when it sees two
+  // consecutive user messages with no bot reply in between.
+  /\bsorry,?\s+(?:about that|something|my last|that got)/i,
+  /\b(my last message|what i said|let me try (that|again)|to recap what i said)\b/i,
+  /\b(scrambled|glitched|got messed up|got cut off on my end|something went wrong on my end)\b/i,
 ];
 
 const STAFF_NAMES = [
@@ -225,7 +230,9 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   text = text.replace(DASH_CHARS, ', ');
   // Hyphens between letters (e.g. "US-only", "long-term") get softened.
   text = text.replace(/([A-Za-z])-([A-Za-z])/g, '$1 $2');
-  text = text.replace(/ ,/g, ',').replace(/,\s+,/g, ',').replace(/\s{2,}/g, ' ').trim();
+  // Collapse repeated horizontal whitespace, but PRESERVE newlines so the
+  // qualification checklist and other multi-line content survive.
+  text = text.replace(/ ,/g, ',').replace(/,[ \t]+,/g, ',').replace(/[ \t]{2,}/g, ' ').trim();
 
   // 2. Normalize doctor name variants.
   for (const rx of NAME_VARIANTS) {
@@ -245,15 +252,31 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   }
 
   // 3. Strip emoji unless this is the first message.
-  // Note: `.test()` on a /g regex is stateful (maintains lastIndex). Reset
-  // before each test so the module-level EMOJI_REGEX doesn't drag state
-  // across requests in a long-lived Worker process.
+  //    Note: `.test()` on a /g regex is stateful (maintains lastIndex). Reset
+  //    before each test so the module-level EMOJI_REGEX doesn't drag state
+  //    across requests in a long-lived Worker process.
+  //    EXCEPTION: the qualification checklist uses ✅ as bullet markers
+  //    (4 ✅ in one message). Detect this signature and preserve those.
+  //    Also preserve newlines for the checklist (the wall-of-text failure
+  //    came from the previous .replace(/\s{2,}/g, ' ') collapsing them).
   EMOJI_REGEX.lastIndex = 0;
   const hadEmoji = EMOJI_REGEX.test(text);
   if (!input.isFirstMessage) {
     if (hadEmoji) {
-      violations.push('stripped_emoji_after_opener');
-      text = text.replace(EMOJI_REGEX, '').replace(/\s{2,}/g, ' ').trim();
+      // Detect qualification checklist: 4+ ✅ marks. If found, strip OTHER
+      // emoji but keep the ✅ and preserve newlines.
+      const checkmarkCount = (text.match(/✅/g) ?? []).length;
+      const isChecklist = checkmarkCount >= 4;
+      if (isChecklist) {
+        // Strip emoji EXCEPT ✅. Preserve newlines (don't collapse to space).
+        text = text.replace(EMOJI_REGEX, (m) => (m === '✅' ? m : ''));
+        // Collapse only sequences of horizontal whitespace, not newlines.
+        text = text.replace(/[ \t]{2,}/g, ' ').trim();
+        violations.push('stripped_emoji_after_opener_kept_checklist');
+      } else {
+        violations.push('stripped_emoji_after_opener');
+        text = text.replace(EMOJI_REGEX, '').replace(/\s{2,}/g, ' ').trim();
+      }
     }
   } else if (!hadEmoji) {
     // First message must contain exactly one emoji per the opener template.
@@ -270,24 +293,92 @@ export function applyGuardrail(input: GuardrailInput): GuardrailResult {
   // 3b. Strip AI-summary labels. These are pure tells: a real texter never
   //     prefaces an answer with "Short version:" or "TL;DR,". Rewrite rather
   //     than reject so we keep the content without another Claude call.
+  //     "Honestly," and "Honest answer:" are banned at message-initial
+  //     position only. Mid-sentence "honestly tirz is the one" is team
+  //     voice and stays.
   {
     const before = text;
     text = text.replace(
-      /^(?:\s*)(short version|quick version|quick summary|tl;?dr|in short|to sum up|in summary|long story short|the short answer)\s*[:,\-]\s*/i,
+      /^(?:\s*)(short version|quick version|quick summary|tl;?dr|in short|to sum up|in summary|long story short|the short answer|honest answer|honestly|real talk|bottom line)\s*[:,\-]\s*/i,
       '',
     );
     // Also handle mid-message after a leading fragment + punctuation.
     //   "Nice. Short version: peptides are..." -> "Nice. peptides are..."
     // We only strip when it directly precedes substantive content, so keep
     // the pattern anchored to a sentence-start position after . ! ? or newline.
+    // NOTE: "honestly" + comma is NOT stripped mid-message because that's
+    // legitimate team voice ("yeah, honestly, tirz is the one").
     text = text.replace(
-      /([.!?\n]\s+)(short version|quick version|quick summary|tl;?dr|in short|to sum up|in summary|long story short|the short answer)\s*[:,\-]\s*/gi,
+      /([.!?\n]\s+)(short version|quick version|quick summary|tl;?dr|in short|to sum up|in summary|long story short|the short answer|honest answer|real talk|bottom line)\s*[:,\-]\s*/gi,
       '$1',
     );
     if (text !== before) {
       violations.push('stripped_ai_summary_label');
       // Recapitalize the first letter of the new start if we stripped a prefix.
       text = text.replace(/^([a-z])/, (c) => c.toUpperCase());
+    }
+  }
+
+  // 3c. Self-correction artifact extraction. The model sometimes leaks its
+  //     own editing process, e.g. "anytime 😊\n\nWait, no emoji after the
+  //     first message. Let me redo this.\n\nanytime". Strategy: find the
+  //     LAST self-correction marker, keep everything AFTER it (which is
+  //     usually the corrected reply). If nothing usable remains, reject.
+  //     Pure REJECT doesn't work because the model produces the same
+  //     pattern on retry. Empirically observed in regression_lauren_short_
+  //     match_thank_you: model emits emoji + "Wait" + correction + final.
+  {
+    // Broadened to catch more variants: redo, rewrite, try again, try this
+    // again, rephrase, restart, start over, fix that, correct that, do that
+    // again. Also catches "scratch that" and "on second thought" as
+    // standalone self-correction phrases. To reduce false positives, the
+    // marker MUST be at the START of a line OR preceded by sentence-ending
+    // punctuation. This prevents "Sure, take your time. I can let me try
+    // again later" (legit content) from triggering.
+    const SELF_CORRECTION_MARKER =
+      /(?:^|[.!?\n]\s*)(let me (?:redo|rewrite|try (?:this )?again|rephrase|restart|start over|fix that|correct that|do that again|try that again)|scratch that|on second thought)[^\n.!?]*[.!?\n]?/gi;
+    if (SELF_CORRECTION_MARKER.test(text)) {
+      // Find the position AFTER the last marker.
+      let lastEnd = -1;
+      SELF_CORRECTION_MARKER.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = SELF_CORRECTION_MARKER.exec(text)) !== null) {
+        lastEnd = m.index + m[0].length;
+      }
+      if (lastEnd > -1) {
+        const extracted = text.slice(lastEnd).replace(/^[\s\-—–\u2014\n]+/, '').trim();
+        if (extracted.length > 0) {
+          text = extracted;
+          violations.push('self_correction_extracted');
+        } else {
+          return {
+            ok: false,
+            reason: 'self-correction artifact with no recoverable reply after the marker',
+            violations: [...violations, 'self_correction_leak'],
+          };
+        }
+      }
+    }
+    // Also strip "Wait, no emoji" commentary lines (model self-talk that
+    // sometimes leaks without a "let me" marker). Line-based filter is more
+    // robust than a single regex with newlines + end-of-string variations.
+    {
+      const WAIT_LINE = /^\s*(actually,?\s*)?wait,?\s*(no\s*)?(emoji|dashes?|hyphens?)\b/i;
+      const lines = text.split('\n');
+      const filtered = lines.filter((line) => !WAIT_LINE.test(line));
+      if (filtered.length !== lines.length) {
+        text = filtered.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        violations.push('self_correction_extracted');
+      }
+    }
+    // Strip leading emoji if it survived (the model often opens with one
+    // before catching itself).
+    if (!input.isFirstMessage) {
+      const before = text;
+      text = text.replace(/^[\s]*[\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{2600}-\u{27BF}\u{1F680}-\u{1F6FF}]+\s*/u, '').trim();
+      if (text !== before && !violations.includes('stripped_emoji_after_opener')) {
+        violations.push('stripped_emoji_after_opener');
+      }
     }
   }
 

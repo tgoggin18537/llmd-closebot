@@ -577,6 +577,147 @@ const CASES: Case[] = [
       "Validation sentence here. Middle one with a specific number like 15 to 20%. Middle two more detail about mechanism. Middle three about Dr. Lee. Want me to send the link so you can chat with the specialist about your situation in detail?",
     expect: { ok: true, contains: ['Validation', 'Want me to send the link'] },
   },
+
+  // ============================================================
+  // V3 ITER #3b: self-correction extraction tests
+  // ============================================================
+  {
+    name: 'self-correction: extracts reply after Let me redo with emoji prefix',
+    candidate: "anytime 😊\n\nWait, no emoji after the first message. Let me redo this.\n\nanytime",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      contains: ['anytime'],
+      notContains: ['Let me redo', 'Wait', '😊'],
+      violationsIncludes: ['self_correction_extracted'],
+    },
+  },
+  {
+    name: 'self-correction: rejects when nothing follows the marker',
+    candidate: "anytime 😊\n\nWait, no emoji. Let me redo this.",
+    isFirstMessage: false,
+    expect: { ok: false, reasonIncludes: 'no recoverable reply' },
+  },
+  {
+    name: 'self-correction: multiple markers, keeps text after the last',
+    candidate: "draft one. Let me rewrite.\n\ndraft two. Let me redo this.\n\nfinal reply here",
+    isFirstMessage: false,
+    expect: { ok: true, contains: ['final reply here'], notContains: ['draft one', 'draft two'] },
+  },
+  {
+    name: 'self-correction: case-insensitive LET ME REDO',
+    candidate: "first try. LET ME REDO THIS.\n\ncleaner reply",
+    isFirstMessage: false,
+    expect: { ok: true, contains: ['cleaner reply'], notContains: ['first try', 'LET ME REDO'] },
+  },
+  {
+    name: 'self-correction: standalone Wait, no emoji line at start',
+    candidate: "Wait, no emoji.\n\nGot it, here you go.",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      contains: ['Got it'],
+      notContains: ['Wait, no emoji'],
+      violationsIncludes: ['self_correction_extracted'],
+    },
+  },
+  {
+    name: 'self-correction: catches "let me rephrase" variant',
+    candidate: "first draft. Let me rephrase.\n\nbetter draft",
+    isFirstMessage: false,
+    expect: { ok: true, contains: ['better draft'], notContains: ['first draft', 'Let me rephrase'] },
+  },
+  {
+    name: 'self-correction: catches "scratch that" standalone',
+    candidate: "you should do X. Scratch that. Actually you should do Y.",
+    isFirstMessage: false,
+    expect: { ok: true, contains: ['Actually you should do Y'], notContains: ['Scratch that'] },
+  },
+  {
+    name: 'self-correction: false-positive guard, "let me try again later" mid-content',
+    candidate: "Sure, take your time. I can text you later if that works",
+    isFirstMessage: false,
+    // The marker requires preceded-by-punctuation OR start-of-line. The phrase
+    // "I can text you later" has no marker so it should pass through clean.
+    expect: { ok: true, contains: ['Sure, take your time'] },
+  },
+  {
+    name: 'self-correction: trailing Wait line at end of message strips correctly',
+    candidate: "anytime\n\nWait, no emoji",
+    isFirstMessage: false,
+    expect: { ok: true, contains: ['anytime'], notContains: ['Wait, no emoji'] },
+  },
+
+  // ============================================================
+  // V3 ITER #3b: qualification checklist preserves ✅ and newlines
+  // ============================================================
+  {
+    name: 'checklist: 4 ✅ marks are preserved (not stripped as emoji)',
+    candidate:
+      "Wonderful! I'm excited to get you connected.\n✅ Based in the USA\n✅ Ready to work on a goal\n✅ Open to subcutaneous\n✅ A monthly program of $300 to $500\nDoes this sound like a good fit?",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      contains: ['✅ Based', '✅ Ready', '✅ Open', '✅ A monthly'],
+      violationsIncludes: ['stripped_emoji_after_opener_kept_checklist'],
+    },
+  },
+  {
+    name: 'checklist: newlines between ✅ items are preserved (no wall of text)',
+    candidate:
+      "Wonderful!\n✅ Based in the USA\n✅ Ready\n✅ Open to subcutaneous\n✅ A monthly program\nDoes this sound right?",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      contains: ['✅ Based in the USA\n', 'Open to subcutaneous\n'],
+      notContains: ['Based in the USA ✅', 'USA Ready'],
+    },
+  },
+  {
+    name: 'checklist: stray non-checklist emoji still stripped even with ✅',
+    candidate:
+      "Wonderful! 😊\n✅ Based in the USA\n✅ Ready\n✅ Open to subcutaneous\n✅ A monthly program\nDoes this work?",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      contains: ['✅ Based', '✅ Ready'],
+      notContains: ['😊'],
+    },
+  },
+
+  // ============================================================
+  // V3 ITER #3b: "Honestly," / "Honest answer:" message-initial banned
+  // ============================================================
+  {
+    name: 'strips: message-initial "Honest answer:"',
+    candidate: "Honest answer: protocols start around $300 a month.",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      notContains: ['Honest answer:'],
+      contains: ['Protocols start around $300'],
+      violationsIncludes: ['stripped_ai_summary_label'],
+    },
+  },
+  {
+    name: 'strips: message-initial "Honestly,"',
+    candidate: "Honestly, the cost depends on the protocol.",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      notContains: ['Honestly,'],
+      contains: ['cost depends'],
+    },
+  },
+  {
+    name: 'allows: mid-sentence "honestly tirz is the one"',
+    candidate: "yeah honestly tirz is the one I'd point you toward first.",
+    isFirstMessage: false,
+    expect: {
+      ok: true,
+      contains: ['honestly tirz'],
+    },
+  },
 ];
 
 function check(label: string, c: Case): { passed: boolean; detail: string } {

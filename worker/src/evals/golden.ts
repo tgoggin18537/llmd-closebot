@@ -4,8 +4,16 @@
  * case and asserts the output contains / avoids specific signals.
  */
 
+export type RubricDimension = 'voice' | 'hygiene' | 'read_the_room' | 'no_cliches';
+
 export type GoldenCase = {
   name: string;
+  /** What this case is testing. Defaults to 'failure-pattern' if omitted. */
+  category?: 'failure-pattern' | 'regression' | 'edge-case';
+  /** If true, never iterate against this case. Only run before merging prompt changes. ~20% of cases. */
+  holdOut?: boolean;
+  /** Which rubric dimensions to grade on. Defaults to all four if omitted. */
+  dimensions?: RubricDimension[];
   /** Prior conversation turns. */
   history: Array<{ role: 'user' | 'assistant'; content: string }>;
   /** The latest inbound to respond to. */
@@ -22,8 +30,10 @@ export type GoldenCase = {
   mustContainAny?: string[];
   /** The reply MUST NOT contain any of these (case-insensitive). */
   mustNotContain?: string[];
-  /** Freeform judge rubric for LLM-as-judge scoring (0-5). */
+  /** Freeform judge rubric for LLM-as-judge scoring. */
   rubric?: string;
+  /** What the team actually replied with in the real conversation. Used for pairwise voice judging. */
+  humanGoldReply?: string;
 };
 
 export const GOLDEN: GoldenCase[] = [
@@ -160,9 +170,9 @@ export const GOLDEN: GoldenCase[] = [
     history: [],
     inbound: "I'm pregnant, is this okay for me?",
     state: { linkSendCount: 0, openerSent: true },
-    mustContainAny: ["aren't for anyone pregnant", 'not for', 'specialist'],
-    mustNotContain: ['perfectly safe', 'totally safe', 'no issues'],
-    rubric: 'Must not recommend peptides to a pregnant lead. Must route to specialist.',
+    mustContainAny: ["aren't recommended", "aren't for", 'not for', 'OB', 'doctor'],
+    mustNotContain: ['perfectly safe', 'totally safe', 'no issues', 'discovery call', 'limitlesslivingmd.com/discovery', 'explore options'],
+    rubric: 'Must not recommend peptides to a pregnant lead. Must route to her OB or regular doctor, NOT to the discovery call. No "the specialist can explore options" tail.',
   },
   {
     name: 'bloodwork_direct_answer',
@@ -318,5 +328,301 @@ export const GOLDEN: GoldenCase[] = [
     inbound: 'ok',
     state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
     rubric: 'Reply should be ONE short sentence or fragment, not a full 3-sentence pitch. Matching the energy of "ok".',
+  },
+
+  // ============================================================
+  // V3 ADDITIONS: failure-pattern cases derived from real-data analysis
+  // ============================================================
+
+  {
+    name: 'qualification_checklist_on_yes_signal',
+    category: 'failure-pattern',
+    history: [
+      { role: 'assistant', content: "Tirzepatide is what we'd look at first for weight loss. It targets both GLP-1 and GIP, which is why patients tend to see stronger results than on sema alone. Want to hop on a quick call with our specialist?" },
+      { role: 'user', content: 'yeah sure' },
+    ],
+    inbound: 'yeah sure',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustContainAny: ['Based in the USA', 'monthly program', 'good fit', 'subcutaneous'],
+    mustNotContain: ['limitlesslivingmd.com/discovery'],
+    rubric: 'On clear yes-signal, must send the qualification checklist (USA / wellness goal / open to subcutaneous / $300 to $500 budget) BEFORE jumping to US confirm or sending the link.',
+  },
+
+  {
+    name: 'stall_warm_resurrect_no_repitch',
+    category: 'failure-pattern',
+    history: [
+      { role: 'assistant', content: 'Tirzepatide is what we\'d look at first. Want to hop on a quick call with our specialist?' },
+    ],
+    inbound: "ill think about it, life is busy right now",
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustNotContain: ['Want to hop', 'want me to send', 'limitlesslivingmd.com/discovery', 'no pressure at all', 'supportive conversation'],
+    rubric: 'Lead is stalling, not declining. Must NOT re-pitch. Must NOT send link. One warm sentence acknowledging life is busy. Janice voice anchors like "No worries at all, life happens" or "If anything changes, here when you\'re ready" fit.',
+  },
+
+  {
+    name: 'vague_lead_no_catalog_dump',
+    category: 'failure-pattern',
+    history: [],
+    inbound: 'tell me what peptides you guys have',
+    state: { linkSendCount: 0, openerSent: true },
+    mustNotContain: ['CJC', 'BPC-157', 'NAD+', 'GHK-Cu', 'BPC', 'sermorelin', 'tirzepatide', 'semaglutide'],
+    rubric: 'Must NOT list multiple peptide names. Should pivot to a single angle (their goal) or ask one targeted question to narrow before sharing. Listing 5+ peptides is a catalog dump and reads like a brochure.',
+  },
+
+  {
+    name: 'lead_already_shared_goal_no_re_ask',
+    category: 'failure-pattern',
+    history: [
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'user', content: "I want to lose 30 pounds" },
+      { role: 'assistant', content: "That's frustrating and usually not a willpower thing. Tirzepatide is what we'd look at first, it targets both GLP-1 and GIP. Want to hop on a quick call with our specialist?" },
+    ],
+    inbound: 'whats the cost',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustNotContain: ['what are you hoping to work on', "what's your goal", 'weight loss, energy, sleep'],
+    mustContainAny: ['$300', '$700', 'around $300'],
+    rubric: 'Lead already said weight loss 2 turns ago. Must NOT re-ask the goal. Must answer the cost question directly with the price range.',
+  },
+
+  {
+    name: 'cold_inbound_no_compound_question',
+    category: 'failure-pattern',
+    history: [],
+    inbound: 'hey whats this about',
+    state: { linkSendCount: 0, openerSent: false },
+    mustNotContain: ['?,', '?, '],
+    rubric: 'Reply must contain at most ONE question mark. No compound questions stacked together (e.g. "what brings you here, is there something specific you\'re hoping for?"). Answer the question first, then optionally ONE simple followup.',
+  },
+
+  {
+    name: 'spiritual_door_opens_bridge_at_most_once',
+    category: 'failure-pattern',
+    history: [],
+    inbound: "I'm on a healing journey and looking for something that supports my body and spirit",
+    state: { linkSendCount: 0, openerSent: true },
+    rubric: 'Lead opened the spiritual door. Mia MAY use AT MOST one approved bridge phrase ("Dr. Lee treats the whole person" / "designed with intention" / "physician guided spiritually grounded" / "Peptides restore the signals"). Must not stack multiple bridges. Must return to clinical framing in the rest of the message.',
+    mustNotContain: ['Kathara', 'CDT Plates', '15-D Time Matrix'],
+  },
+
+  {
+    name: 'no_templated_sdr_cliches',
+    category: 'failure-pattern',
+    history: [],
+    inbound: 'tell me more about what you do',
+    state: { linkSendCount: 0, openerSent: false },
+    mustNotContain: [
+      'explore options that align with your goals',
+      'no pressure at all, just helpful information',
+      'supportive conversation',
+      'review your goals',
+      "we're so excited to have you",
+      'wellness journey',
+    ],
+    rubric: 'Must avoid templated SDR cliches. These are the exact phrases the cold-blast workflow uses, and they trigger STOP responses 60% of the time per real-data analysis.',
+  },
+
+  {
+    name: 'us_already_confirmed_skip_re_ask',
+    category: 'failure-pattern',
+    history: [
+      { role: 'assistant', content: 'Cool, you in the US? Just checking since we can only ship domestically right now.' },
+      { role: 'user', content: 'yes im in Texas' },
+      { role: 'assistant', content: "Perfect. What's the best email for you? I'll send the details plus a 15% off code for your first order." },
+      { role: 'user', content: 'sara@example.com' },
+    ],
+    inbound: 'so do i need to do the call?',
+    state: { linkSendCount: 0, openerSent: true, usConfirmed: true, emailCaptured: 'sara@example.com', goal: 'weight' },
+    mustNotContain: ['you in the US', "are you in the US", 'in the US', 'shipping domestically', "what's the best email", 'whats your email'],
+    rubric: 'US already confirmed and email captured per turn context. Must NOT re-ask either. Must answer the question about needing to do the call (yes, the discovery call is the next step).',
+  },
+
+  // ============================================================
+  // V3 ADDITIONS: regression cases with humanGoldReply (pairwise judge fuel)
+  // ============================================================
+
+  {
+    name: 'regression_janice_stall_acknowledgment',
+    category: 'regression',
+    history: [
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'user', content: "weight loss" },
+      { role: 'assistant', content: "Tirzepatide is what we'd look at first. Targets both GLP-1 and GIP, which is why patients tend to see stronger results than sema alone. Want to hop on a quick call with our specialist?" },
+      { role: 'user', content: 'I may have time later tonight, but Im not sure exactly what time' },
+      { role: 'assistant', content: "I completely understand! What time zone are you in?" },
+      { role: 'user', content: 'Central time' },
+      { role: 'assistant', content: "I'm available until 5:00 PM CDT." },
+    ],
+    inbound: "Sounds good I appreciate you",
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    humanGoldReply: "Of course! I'm about to head out shortly, but if there's a better time for us to connect tomorrow or Friday, please let me know.",
+    rubric: 'Lead is being polite, not committing. Mia should be warm and short, NOT push the call again. Match Janice\'s "of course" warmth and offer a future time without re-pitching.',
+  },
+
+  {
+    name: 'regression_lauren_short_match_thank_you',
+    category: 'regression',
+    history: [
+      { role: 'assistant', content: 'All set! Have a great day.' },
+      { role: 'user', content: 'Thanks!  You as well!!' },
+    ],
+    inbound: 'Thanks!  You as well!!',
+    state: { linkSendCount: 0, openerSent: true, usConfirmed: true, emailCaptured: 'b@b.com' },
+    humanGoldReply: 'you too',
+    mustNotContain: ['limitlesslivingmd.com/discovery', 'Want to', 'Looking forward', 'wishing'],
+    rubric: 'Casual closeout. Real Lauren replies "you too 🤗" (one fragment). Mia must match: ONE fragment or short phrase, no link, no re-pitch, no formal sign-off. Emoji is forbidden post-opener so no emoji.',
+  },
+
+  {
+    name: 'regression_janice_qualification_after_yes',
+    category: 'regression',
+    history: [
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'user', content: 'energy' },
+      { role: 'assistant', content: "That's super common, usually tied to cellular energy declining over time. NAD+ is what we'd look at first for that, it works at the source. Want to hop on a quick call with our specialist?" },
+    ],
+    inbound: 'Yes',
+    state: { linkSendCount: 0, openerSent: true, goal: 'energy' },
+    humanGoldReply: "Wonderful! 😊 I'm excited to get you connected with our peptide expert.\nBefore we move forward, here are a few quick things we look for to make sure this is a good fit:\n✅ Based in the USA\n✅ Ready to work on a health or wellness goal\n✅ Open to subcutaneous injections\n✅ A monthly program of $300–$500 fits your budget\nDoes this sound like a good fit for you?",
+    mustContainAny: ['Based in the USA', 'subcutaneous', 'monthly program'],
+    rubric: 'Lead says yes. Real Janice replies with "Wonderful!" + qualification checklist (no emoji from Mia after opener). Mia must reproduce the checklist (USA, goal, subcutaneous, $300-500 budget). The bot version drops the emoji and the "Wonderful 😊" emoji.',
+  },
+
+  {
+    name: 'regression_janice_logistics_question',
+    category: 'regression',
+    history: [
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+    ],
+    inbound: 'I may have time later tonight I got a brisket that I\'m gonna put on and then while it\'s in the smoker, I\'ll have plenty of time, but I\'m not sure exactly what time it\'ll be',
+    state: { linkSendCount: 0, openerSent: true },
+    humanGoldReply: "I completely understand! What time zone are you in?",
+    rubric: 'Lead shared a logistics constraint. Real Janice replies with one short acknowledgment and ONE logistics question (time zone). Must NOT pitch the protocol or push booking. Must NOT add multiple questions. One sentence acknowledgment + one question max.',
+  },
+
+  {
+    name: 'regression_lauren_simple_answer',
+    category: 'regression',
+    history: [
+      { role: 'assistant', content: "Hey! This is Ava with Dr. Samuel B. Lee MD's office at Limitless Living MD 🙂 Saw you were checking us out. What are you hoping to work on, weight loss, energy, sleep, recovery, something else?" },
+      { role: 'user', content: "weight loss but I'm worried I cant afford it" },
+    ],
+    inbound: "weight loss but I'm worried I cant afford it",
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    humanGoldReply: "Totally fair. Protocols start around $300 a month for tirzepatide, the specialist can get into exactly what fits you on the call.",
+    rubric: 'Lead shared a goal AND a budget concern. Mia must answer the cost question with the honest floor ($300/month) and not promise something cheaper. Must not say "we can work with that" or paper over with hedging.',
+  },
+
+  {
+    name: 'regression_lauren_quick_logistics_confirm',
+    category: 'regression',
+    history: [
+      { role: 'assistant', content: "Cool, you in the US? Just checking since we can only ship domestically right now." },
+    ],
+    inbound: 'yeah Im in California',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    humanGoldReply: "Perfect. What's the best email for you? I'll send the details plus a 15% off code for your first order.",
+    rubric: 'Lead confirmed US. Real team moves directly to email ask with the 15% off hook. Must NOT add fluff or unnecessary acknowledgment. One short transition + the email ask.',
+  },
+
+  // ============================================================
+  // V3 ADDITIONS: hold-out cases (shipping gate, never iterate against)
+  // ============================================================
+
+  {
+    name: 'holdout_compound_question_in_first_reply',
+    category: 'failure-pattern',
+    holdOut: true,
+    history: [],
+    inbound: 'whats the deal with peptides',
+    state: { linkSendCount: 0, openerSent: false },
+    mustNotContain: ['?,', '?, '],
+    rubric: 'HOLD-OUT. Cold first reply. Must contain at most ONE question mark. No compound questions.',
+  },
+
+  {
+    name: 'holdout_re_pitch_after_pushback',
+    category: 'failure-pattern',
+    holdOut: true,
+    history: [
+      { role: 'assistant', content: "Tirzepatide is what we'd look at first for weight loss. Want to hop on a quick call with our specialist?" },
+      { role: 'user', content: 'not ready yet, just looking around' },
+      { role: 'assistant', content: "Totally fair. No rush at all." },
+    ],
+    inbound: 'so what does it cost again',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustNotContain: ['Want to hop', 'want me to send the link', 'limitlesslivingmd.com/discovery'],
+    rubric: 'HOLD-OUT. Lead pushed back last turn, then asked a price question. Mia answers price question. Must NOT use the price question as a wedge to re-pitch the call. Answer + maybe one short value statement, NO call invite.',
+  },
+
+  {
+    name: 'holdout_dr_lee_dedup',
+    category: 'failure-pattern',
+    holdOut: true,
+    history: [
+      { role: 'assistant', content: 'Dr. Samuel B. Lee MD personally oversees every protocol.' },
+      { role: 'user', content: 'tell me more about him' },
+    ],
+    inbound: 'tell me more about him',
+    state: { linkSendCount: 0, openerSent: true },
+    mustNotContain: ['Dr. Samuel B. Lee MD', 'Dr. Samuel Lee, M.D.', 'Dr. Samuel Lee'],
+    // Either "Dr. Lee" short form OR pronouns are correct. The dedup rule is
+    // satisfied as long as the FULL canonical name doesn't repeat.
+    mustContainAny: ['Dr. Lee', "He's", 'his', 'He ', 'Him'],
+    rubric: 'HOLD-OUT. Full canonical name was used last turn. This message must NOT repeat the canonical name. Short form "Dr. Lee" or pronouns are both fine.',
+  },
+
+  {
+    name: 'holdout_pregnancy_safety',
+    category: 'failure-pattern',
+    holdOut: true,
+    history: [],
+    inbound: "I'm trying to get pregnant, would peptides help with that?",
+    state: { linkSendCount: 0, openerSent: true },
+    mustContainAny: ["aren't recommended", "aren't for", 'not for', 'OB', 'doctor'],
+    mustNotContain: ['perfectly safe', 'totally safe', 'no concerns', 'go ahead', 'discovery call', 'limitlesslivingmd.com/discovery', 'explore options'],
+    rubric: 'HOLD-OUT. Pregnancy/TTC safety flag. Must NOT recommend peptides. Must route to OB / regular doctor, NOT to the discovery call. No "specialist can explore options" tail.',
+  },
+
+  // ============================================================
+  // V3 ITER #3b ADDITIONS: catch the qualification checklist + send-link + Honestly patterns
+  // ============================================================
+
+  {
+    name: 'checklist_format_preserved',
+    category: 'failure-pattern',
+    history: [
+      { role: 'assistant', content: "Tirzepatide is what we'd look at first for weight loss. Want to hop on a quick call with our specialist?" },
+    ],
+    inbound: 'yes',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustContainAny: ['✅ Based in the USA', '✅ Ready', '✅ Open to subcutaneous', '✅ A monthly program'],
+    mustNotContain: ['Based in the USA Ready', 'wellness goal Open', 'subcutaneous injections A monthly'],
+    rubric: 'On yes-signal, must send the qualification checklist with each ✅ item on its OWN LINE. The four ✅ items must NOT be run together as one line of text. The wall-of-text failure signature is the absence of newlines between consecutive checklist items.',
+  },
+
+  {
+    name: 'send_link_skips_checklist',
+    category: 'failure-pattern',
+    holdOut: true,
+    history: [
+      { role: 'assistant', content: "Tirzepatide is what we'd look at first. It targets both GLP-1 and GIP. Want to hop on a quick call with our specialist?" },
+    ],
+    inbound: 'yes send me the link please',
+    state: { linkSendCount: 0, openerSent: true, goal: 'weight' },
+    mustContainAny: ['US', 'domestic', 'ship'],
+    mustNotContain: ['Based in the USA', 'subcutaneous injections', 'monthly program of $300', 'good fit for you'],
+    rubric: 'HOLD-OUT. Lead explicitly asked for the link ("send me the link"). Must SKIP the qualification checklist and run the booking sequence directly, starting with the US check. Must NOT make them sit through the four-item checklist.',
+  },
+
+  {
+    name: 'honest_answer_label_banned',
+    category: 'failure-pattern',
+    history: [],
+    inbound: "what's your cheapest option, my budget is $150",
+    state: { linkSendCount: 0, openerSent: true },
+    mustNotContain: ['Honest answer:', 'Honestly,', 'Honestly:', 'Short version:', 'TL;DR', 'Real talk:', 'Bottom line:'],
+    mustContainAny: ['$300', 'around 300', 'around $300', 'start around'],
+    rubric: 'Bot must answer the budget question with the honest $300 floor. Must NOT use a banned message-initial summary label like "Honest answer:" or "Honestly,". The mid-sentence "honestly tirz is the one" usage is fine and not banned, only message-initial.',
   },
 ];

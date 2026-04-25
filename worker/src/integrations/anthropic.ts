@@ -51,20 +51,39 @@ export async function callClaude(input: ClaudeCallInput): Promise<ClaudeCallOutp
     messages: input.messages,
   };
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': input.apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Anthropic API ${res.status}: ${errText}`);
+  // Retry on 429 (rate limit) and 5xx with exponential backoff. Honors the
+  // `retry-after` header when Anthropic provides one (in seconds), otherwise
+  // falls back to exponential: 1s, 2s, 4s, 8s, 16s. Max 5 attempts.
+  let res!: Response;
+  let lastErr = '';
+  for (let attempt = 0; attempt < 5; attempt++) {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': input.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) break;
+    if (res.status !== 429 && res.status < 500) {
+      // 4xx other than 429 is a real error, don't retry.
+      lastErr = await res.text();
+      throw new Error(`Anthropic API ${res.status}: ${lastErr}`);
+    }
+    lastErr = await res.text();
+    if (attempt === 4) break;
+    const retryAfterRaw = Number(res.headers.get('retry-after'));
+    const retryAfter = Number.isFinite(retryAfterRaw) && retryAfterRaw > 0
+      ? Math.min(retryAfterRaw, 30)
+      : 0;
+    const waitMs = retryAfter > 0
+      ? retryAfter * 1000
+      : 1000 * Math.pow(2, attempt);
+    await new Promise((r) => setTimeout(r, waitMs));
   }
+  if (!res.ok) throw new Error(`Anthropic API ${res.status} after retries: ${lastErr}`);
 
   const data = (await res.json()) as any;
   const text: string = (data.content ?? [])
