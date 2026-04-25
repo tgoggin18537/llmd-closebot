@@ -1,0 +1,25 @@
+LLMD CloseBot — GHL Conversation Training Data,
+"Pulled: April 10, 2026  |  Source: GoHighLevel (LLMD Sub-account)  |  For: CloseBot bot trainer / contractor",
+,
+KEY FINDINGS FOR BOT TRAINING,
+CRITICAL FINDING,"The D+2 check-in SMS after the discovery call is the single most conversion-critical message. In every thread reviewed, a purchase followed when Lauren sent a morning check-in asking if the lead had questions about the invoice. The bot MUST send this proactively, personalized to the call discussion."
+Conversation AI Transcripts,NOT stored in GHL. The 88+ contacts tagged 'smartbot | import' were imported FROM a prior AI tool — those chat transcripts exist only in the source SmartBot platform. This spreadsheet contains all available GHL SMS data.
+Two Sender Numbers,+18337154447 = Primary LLMD number (Lauren + all automated workflows). +14352925563 = Janice setter number only. CloseBot should be registered to +18337154447 to maintain continuity with leads who already have Lauren's number.
+Three Human Setters Identified,"Janice (userId: 1N3n2voecT7o7g5rqyH2), Erin (userId: lZnQHFibOdnLt3KbGw5l), Lauren (userId: Ptq5d0pW1GYT2uFJraIM). All three used slight variations of the same base template. Erin's variant referenced Healthie import."
+Carrier Blocking Risk,"Automated no-show SMS containing 'You deserve to feel clear, energized, and balanced again' was blocked by carrier (Error 30007 on Anastasia Taylor and Darion Hansen threads). Lauren's manual version was always delivered. Avoid wellness-claim language in automated SMS."
+Objection Pattern,Most 'not interested' responses are single-sentence polite declines or STOP unsubscribes. Very few are argumentative. Bot exit should be short and warm — no re-pitch.
+Soft Hesitation ≠ Disinterest,"Leads who say 'what time?' or go slow are experiencing scheduling friction, not disinterest. Offering specific time slots converts these. Hard STOP = genuine disinterest. Treat differently."
+Post-Call Inbound Questions,Most common questions after the call: (1) How do I buy the 3-month protocol? (2) Can you send the COA? (3) What state are you in? (4) Can you update the invoice for a second person? (5) Where is my shipment? Bot should proactively offer help with next steps rather than re-pitching.
+Purchase Tags = Existing Patient,"If a contact already has cjc+ipamorelin, nad+, tirzepatide, or any other purchase tag, route to 'Already a Patient' scenario — NOT the setter flow."
+Two Bot Modes Required,"Mode 1 — Setter (pre-call): Warm, no-pressure, curiosity-led. Mirror Janice's voice. Goal: book 15-min discovery call.
+Mode 2 — Post-call nurture: Mirror Lauren's follow-up voice. Goal: remove purchase friction, check for questions, reference call discussion."
+SPREADSHEET TABS GUIDE,
+Tab 2: Setter Scripts,"All Janice/Erin setter outreach templates: 1st, 2nd, 3rd touch + cold re-engagement variants."
+Tab 3: Booking Sequence,All pre-call and post-booking SMS templates (automated + Lauren manual).
+Tab 4: Post-Call Scripts,"Post-call nurture, D+2 check-in, objection handling, pricing scripts, urgency sequences."
+Tab 5: Automated Workflows,"Automated workflow SMS (welcome, abandoned cart, post-purchase, no-show recovery, Dr. Lee spiritual bridge)."
+Tab 6: Conversion Threads,Full reconstructed SMS threads for 8 high-converting contacts (setter → booking → call → purchase).
+Tab 7: Non-Conversion Threads,"Not-interested, no-show, and cold lead threads with outcome analysis."
+Tab 8: All Raw Messages,Complete flat log of all SMS messages pulled across all 14+ contacts reviewed.
+Tab 9: Error Log,"Carrier errors, blocked messages, and delivery failure patterns to avoid in bot copy."
+Tab 10: Tag Reference,Full GHL pipeline tag map for bot CRM read/write operations.

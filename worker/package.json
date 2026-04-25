@@ -1,0 +1,30 @@
+{
+  "name": "llmd-ava-worker",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Ava, the Limitless Living MD SMS setter bot. Runs on Cloudflare Workers, driven by Claude.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:prod": "wrangler deploy --env production",
+    "types": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "eval": "tsx src/evals/run.ts",
+    "judge": "tsx src/evals/judge.ts",
+    "eval-report": "tsx src/evals/report.ts",
+    "export-convos": "tsx scripts/export-ghl-convos.ts",
+    "extract-voice": "tsx scripts/extract-voice.ts",
+    "render-samples": "tsx scripts/render-samples.ts",
+    "db:migrate:local": "wrangler d1 migrations apply llmd_mia --local",
+    "db:migrate:remote": "wrangler d1 migrations apply llmd_mia --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250413.0",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.90.0"
+  }
+}
